@@ -1,0 +1,3291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TRF: de la ventana deslizante al ERP</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: #000000;
+  color: #f4f4f4;
+  font-family: "KaTeX_Main", "Latin Modern Roman", "Times New Roman", serif;
+}
+
+.viz {
+  position: relative;
+  overflow: clip;
+}
+
+.double-rule {
+  border: 0;
+  border-top: 4px double #6a6a6a;
+  margin: 36px 32px;
+}
+
+#viz-lagged {
+    --bg: #000000;
+    --ink: #f4f4f4;
+    --dim: #8a8a8a;
+    --faint: #3a3a3a;
+    --past: #58c4dd;
+    --present: #ffffff;
+    --future: #fc6255;
+    --beta: #f4d345;
+    --eeg: #83c167;
+    --serif: "KaTeX_Main", "Latin Modern Roman", "CMU Serif",
+      "Times New Roman", serif;
+    --math: "KaTeX_Math", "Latin Modern Math", "Cambria Math",
+      "Times New Roman", serif;
+    --cell-h: 30px;
+    --cell-w: 56px;
+    --cell-font: 19px;
+    --bracket-pad: 6px;
+  }
+#viz-lagged {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.45;
+  }
+#viz-lagged .page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+#viz-lagged .intro {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px 32px;
+    padding: 18px 32px 0;
+  }
+#viz-lagged .intro-text { max-width: 46em; }
+#viz-lagged .intro h1 {
+    font-weight: 400;
+    font-size: 25px;
+    line-height: 1.2;
+    margin: 0 0 4px;
+  }
+#viz-lagged .lede {
+    margin: 0;
+    color: #c4c4c4;
+  }
+#viz-lagged .future-text { color: var(--future); }
+#viz-lagged .past-text { color: var(--past); }
+#viz-lagged .stage {
+    flex: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: 24px 40px;
+    padding: 18px 32px 24px;
+    align-items: start;
+  }
+#viz-lagged .algebra {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    min-width: 0;
+  }
+#viz-lagged .equation-fit { width: 100%; }
+#viz-lagged .equation {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 10px;
+    transform-origin: 0 0;
+  }
+#viz-lagged .block {
+    display: flex;
+    flex-direction: column;
+  }
+#viz-lagged .block-head {
+    height: 28px;
+    position: relative;
+  }
+#viz-lagged .block-body {
+    height: calc(
+      var(--rows) * var(--cell-h) + 2 * var(--bracket-pad)
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+#viz-lagged .op {
+    font-size: 24px;
+    padding: 0 3px;
+  }
+#viz-lagged .bracketed {
+    position: relative;
+    padding: var(--bracket-pad) 10px;
+  }
+#viz-lagged .bracketed::before, #viz-lagged .bracketed::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    border: 2px solid var(--ink);
+  }
+#viz-lagged .bracketed::before { left: 0; border-right: 0; }
+#viz-lagged .bracketed::after { right: 0; border-left: 0; }
+#viz-lagged .matrix-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), var(--cell-w));
+  }
+#viz-lagged .tau-head {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), var(--cell-w));
+    align-items: end;
+    padding: 0 10px 3px;
+  }
+#viz-lagged .tau-label {
+    position: absolute;
+    right: calc(100% + 2px);
+    bottom: 3px;
+    font-family: var(--math);
+    font-style: italic;
+    font-size: 17px;
+  }
+#viz-lagged .tau-cell {
+    text-align: center;
+    font-size: 15px;
+    transition: none;
+  }
+#viz-lagged .tau-cell.focus { font-size: 18px; }
+#viz-lagged .future { color: var(--future); }
+#viz-lagged .past { color: var(--past); }
+#viz-lagged .present { color: var(--present); }
+#viz-lagged .cell {
+    height: var(--cell-h);
+    width: var(--cell-w);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--cell-font);
+    border-radius: 5px;
+    opacity: 0.3;
+    color: var(--ink);
+  }
+#viz-lagged .vector .cell { width: 50px; }
+#viz-lagged .cell.zero { color: var(--dim); }
+#viz-lagged .cell.active-row { opacity: 0.6; }
+#viz-lagged .cell.active-row.used, #viz-lagged .cell.active-row.focus { opacity: 1; }
+#viz-lagged .cell.active-row.future { color: var(--future); }
+#viz-lagged .cell.active-row.past { color: var(--past); }
+#viz-lagged .cell.active-row.present { color: var(--present); }
+#viz-lagged .cell.focus {
+    background: color-mix(in srgb, currentColor 22%, transparent);
+  }
+#viz-lagged #lag-y-vector .cell.done { opacity: 1; color: var(--eeg); }
+#viz-lagged #lag-y-vector .cell.active { opacity: 1; color: var(--ink); }
+#viz-lagged #lag-beta-vector .cell { color: var(--beta); opacity: 0.45; }
+#viz-lagged #lag-beta-vector .cell.active { opacity: 1; }
+#viz-lagged .row-highlight, #viz-lagged .vector-highlight {
+    position: absolute;
+    left: 5px;
+    right: 5px;
+    top: var(--bracket-pad);
+    height: var(--cell-h);
+    border: 1.5px solid var(--ink);
+    border-radius: 6px;
+    pointer-events: none;
+    opacity: 0;
+  }
+#viz-lagged .vector-highlight {
+    bottom: var(--bracket-pad);
+    height: auto;
+    border-color: var(--beta);
+  }
+#viz-lagged .sym { white-space: nowrap; }
+#viz-lagged .sym .base {
+    font-family: var(--math);
+    font-style: italic;
+  }
+#viz-lagged .sym sub {
+    font-family: var(--serif);
+    font-style: normal;
+    font-size: 0.66em;
+    line-height: 0;
+    vertical-align: -0.32em;
+  }
+#viz-lagged .expansion {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 4px 6px;
+    font-size: 21px;
+    min-height: 64px;
+  }
+#viz-lagged .expansion .lhs { color: var(--eeg); }
+#viz-lagged .term {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+#viz-lagged .term-stack {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+  }
+#viz-lagged .term-beta { color: var(--beta); }
+#viz-lagged .term-times { color: var(--dim); padding: 0 2px; }
+#viz-lagged .term-s.zero { color: var(--dim); }
+#viz-lagged .term-val {
+    font-size: 14px;
+    color: var(--dim);
+    line-height: 1.2;
+  }
+#viz-lagged .result-val { color: var(--dim); }
+#viz-lagged .result.final .result-val { color: var(--eeg); }
+#viz-lagged .caption {
+    margin: 0;
+    min-height: 3em;
+    color: #c4c4c4;
+    max-width: 60ch;
+  }
+#viz-lagged .plots svg {
+    width: 100%;
+    height: auto;
+    margin: 0 auto;
+    display: block;
+    overflow: visible;
+  }
+#viz-lagged .axis-line { stroke: #4a4a4a; stroke-width: 1; }
+#viz-lagged .pad-zone { fill: #141414; }
+#viz-lagged .band-part { stroke: none; }
+#viz-lagged .band-part.past { fill: var(--past); fill-opacity: 0.13; }
+#viz-lagged .band-part.present { fill: var(--present); fill-opacity: 0.13; }
+#viz-lagged .band-part.future { fill: var(--future); fill-opacity: 0.13; }
+#viz-lagged .band-outline {
+    fill: none;
+    stroke: var(--ink);
+    stroke-opacity: 0.55;
+    stroke-width: 1.2;
+  }
+#viz-lagged .wedge.past { fill: var(--past); fill-opacity: 0.16; }
+#viz-lagged .wedge.present { fill: var(--present); fill-opacity: 0.18; }
+#viz-lagged .wedge.future { fill: var(--future); fill-opacity: 0.16; }
+#viz-lagged .t-line {
+    stroke: var(--ink);
+    stroke-opacity: 0.5;
+    stroke-width: 1;
+    stroke-dasharray: 3 4;
+  }
+#viz-lagged .t-label, #viz-lagged .value-label {
+    font-family: var(--serif);
+    font-size: 14px;
+    fill: var(--ink);
+    text-anchor: middle;
+  }
+#viz-lagged .value-label {
+    fill: var(--eeg);
+    text-anchor: start;
+    paint-order: stroke;
+    stroke: var(--bg);
+    stroke-width: 4px;
+  }
+#viz-lagged .it { font-family: var(--math); font-style: italic; }
+#viz-lagged .stem { color: #5c5c5c; }
+#viz-lagged .stem.past { color: var(--past); }
+#viz-lagged .stem.present { color: var(--present); }
+#viz-lagged .stem.future { color: var(--future); }
+#viz-lagged .stem.pending { opacity: 0.5; }
+#viz-lagged .stem line { stroke: currentColor; stroke-width: 2; }
+#viz-lagged .stem .dot { fill: currentColor; }
+#viz-lagged .stem .pad-dot {
+    fill: var(--bg);
+    stroke: currentColor;
+    stroke-width: 1.3;
+  }
+#viz-lagged .ring {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+  }
+#viz-lagged .tick {
+    font-family: var(--serif);
+    font-size: 12px;
+    fill: currentColor;
+    text-anchor: middle;
+    color: #6a6a6a;
+  }
+#viz-lagged .tick.past { color: var(--past); }
+#viz-lagged .tick.present { color: var(--present); }
+#viz-lagged .tick.future { color: var(--future); }
+#viz-lagged .tick.eeg-now { color: var(--ink); }
+#viz-lagged .band-tau {
+    font-family: var(--serif);
+    font-size: 12px;
+    fill: currentColor;
+    text-anchor: middle;
+  }
+#viz-lagged .band-tau.focus { font-size: 15px; }
+#viz-lagged .eeg-ghost {
+    fill: none;
+    stroke: #3d3d3d;
+    stroke-width: 1.4;
+    stroke-dasharray: 4 4;
+  }
+#viz-lagged .eeg-ghost-dot { fill: #3d3d3d; }
+#viz-lagged .eeg-stem { color: var(--eeg); }
+#viz-lagged .eeg-stem.active { color: #b7e39c; }
+#viz-lagged .trf-zone.future { fill: var(--future); fill-opacity: 0.07; }
+#viz-lagged .trf-zone.past { fill: var(--past); fill-opacity: 0.07; }
+#viz-lagged .zone-label {
+    font-family: var(--serif);
+    font-size: 13px;
+    text-anchor: middle;
+  }
+#viz-lagged .zone-label.future { fill: var(--future); }
+#viz-lagged .zone-label.past { fill: var(--past); }
+#viz-lagged .trf-stem { color: var(--beta); }
+#viz-lagged .panel-name {
+    font-family: var(--math);
+    font-style: italic;
+    font-size: 21px;
+  }
+#viz-lagged .panel-caption {
+    font-family: var(--serif);
+    font-size: 13px;
+    fill: var(--dim);
+  }
+#viz-lagged .overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+  }
+#viz-lagged .overlay path {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+#viz-lagged .controls {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 30px;
+    align-items: center;
+    padding: 12px 32px 14px;
+    border-top: 1px solid #242424;
+    background: #080808;
+    font-size: 15px;
+    color: #cfcfcf;
+  }
+#viz-lagged .transport {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1 1 440px;
+  }
+#viz-lagged .transport input[type="range"] { flex: 1; }
+#viz-lagged .settings {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+    font-size: 14px;
+    color: #cfcfcf;
+  }
+#viz-lagged .settings input[type="range"] { width: 90px; }
+#viz-lagged .settings label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+#viz-lagged button, #viz-lagged input[type="number"] {
+    font: inherit;
+    color: var(--ink);
+    background: #1a1a1a;
+    border: 1px solid #353535;
+    border-radius: 6px;
+  }
+#viz-lagged button {
+    padding: 5px 12px;
+    cursor: pointer;
+  }
+#viz-lagged button:hover { border-color: #6a6a6a; }
+#viz-lagged button.play {
+    min-width: 108px;
+    background: var(--ink);
+    color: #000;
+    border-color: var(--ink);
+  }
+#viz-lagged input[type="number"] {
+    width: 3.8em;
+    padding: 3px 6px;
+  }
+#viz-lagged input[type="range"] { accent-color: var(--past); }
+#viz-lagged button:focus-visible, #viz-lagged input:focus-visible {
+    outline: 2px solid var(--past);
+    outline-offset: 2px;
+  }
+#viz-lagged .position-label {
+    min-width: 7.5em;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+@media (max-width: 920px) {
+#viz-lagged .stage { grid-template-columns: 1fr; padding: 14px 16px; }
+#viz-lagged .intro { padding: 16px 16px 0; }
+#viz-lagged .controls { padding: 10px 16px 12px; }
+}
+
+#viz-erp {
+    --bg: #000000;
+    --ink: #f4f4f4;
+    --dim: #8a8a8a;
+    --past: #58c4dd;
+    --present: #ffffff;
+    --future: #fc6255;
+    --beta: #f4d345;
+    --distractor: #5cd0b3;
+    --eeg: #83c167;
+    --erp: #d147bd;
+    --serif: "KaTeX_Main", "Latin Modern Roman", "CMU Serif",
+      "Times New Roman", serif;
+    --math: "KaTeX_Math", "Latin Modern Math", "Cambria Math",
+      "Times New Roman", serif;
+    --cell-h: 40px;
+    --bracket-pad: 6px;
+  }
+#viz-erp {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.45;
+  }
+#viz-erp .katex { font-size: 1.08em; }
+#viz-erp .page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+#viz-erp .intro {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px 32px;
+    padding: 18px 32px 0;
+  }
+#viz-erp .intro-text { max-width: 50em; }
+#viz-erp .intro h1 {
+    font-weight: 400;
+    font-size: 25px;
+    line-height: 1.2;
+    margin: 0 0 4px;
+  }
+#viz-erp .lede {
+    margin: 0;
+    color: #c4c4c4;
+  }
+#viz-erp .settings {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+    font-size: 14px;
+    color: #cfcfcf;
+  }
+#viz-erp .settings label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+#viz-erp .settings input[type="range"] { width: 90px; }
+#viz-erp .scenario {
+    display: inline-flex;
+    border: 1px solid #353535;
+    border-radius: 7px;
+    overflow: hidden;
+  }
+#viz-erp .scenario button {
+    border: 0;
+    border-radius: 0;
+    background: #121212;
+  }
+#viz-erp .scenario button + button { border-left: 1px solid #353535; }
+#viz-erp .scenario button[aria-checked="true"] {
+    background: var(--ink);
+    color: #000;
+  }
+#viz-erp .stage {
+    flex: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 24px 40px;
+    padding: 18px 32px 24px;
+    align-items: start;
+  }
+#viz-erp .algebra {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+#viz-erp .equation-fit { width: 100%; }
+#viz-erp .equation {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transform-origin: 0 0;
+  }
+#viz-erp .block {
+    display: flex;
+    flex-direction: column;
+  }
+#viz-erp .block-head {
+    height: 30px;
+    position: relative;
+  }
+#viz-erp .op {
+    font-size: 24px;
+    padding: 0 3px;
+  }
+#viz-erp .bracketed {
+    position: relative;
+    padding: var(--bracket-pad) 10px;
+  }
+#viz-erp .bracketed::before, #viz-erp .bracketed::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    border: 2px solid var(--ink);
+  }
+#viz-erp .bracketed::before { left: 0; border-right: 0; }
+#viz-erp .bracketed::after { right: 0; border-left: 0; }
+#viz-erp .matrix-grid, #viz-erp .tau-head {
+    display: grid;
+    grid-template-columns: var(--columns);
+  }
+#viz-erp .tau-head {
+    align-items: end;
+    padding: 0 10px 2px;
+  }
+#viz-erp .tau-label {
+    position: absolute;
+    right: calc(100% + 4px);
+    bottom: 4px;
+  }
+#viz-erp .cell, #viz-erp .tau-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+  }
+#viz-erp .cell {
+    height: var(--cell-h);
+    padding: 0 6px;
+    opacity: 0.5;
+  }
+#viz-erp .cell.row-t { opacity: 1; }
+#viz-erp .cell.block-start, #viz-erp .tau-cell.block-start { border-left: 1.5px solid #555; }
+#viz-erp .cell.block-top { border-top: 1.5px solid #555; }
+#viz-erp .vector .cell { min-width: 64px; }
+#viz-erp #erp-beta-vector .cell { opacity: 1; }
+#viz-erp .future { color: var(--future); }
+#viz-erp .past { color: var(--past); }
+#viz-erp .present { color: var(--present); }
+#viz-erp .beta-s { color: var(--beta); }
+#viz-erp .beta-d { color: var(--distractor); }
+#viz-erp .muted { color: var(--dim); }
+#viz-erp .row-highlight {
+    position: absolute;
+    left: 5px;
+    right: 5px;
+    height: var(--cell-h);
+    top: calc(var(--bracket-pad) + 2 * var(--cell-h));
+    border: 1.5px solid var(--ink);
+    border-radius: 6px;
+    pointer-events: none;
+  }
+#viz-erp .row-product .katex, #viz-erp .estimator .katex { font-size: 1em; }
+#viz-erp .row-product, #viz-erp .estimator {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+  }
+#viz-erp .estimators {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+#viz-erp .estimator { opacity: 0; }
+#viz-erp .caption {
+    margin: 0;
+    min-height: 3em;
+    color: #c4c4c4;
+    max-width: 60ch;
+  }
+#viz-erp .plots svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    overflow: visible;
+  }
+#viz-erp .axis-line { stroke: #4a4a4a; stroke-width: 1; }
+#viz-erp .pad-zone { fill: #141414; }
+#viz-erp .band-part { stroke: none; }
+#viz-erp .band-part.past { fill: var(--past); fill-opacity: 0.14; }
+#viz-erp .band-part.present { fill: var(--present); fill-opacity: 0.3; }
+#viz-erp .band-part.future { fill: var(--future); fill-opacity: 0.14; }
+#viz-erp .band-outline {
+    fill: none;
+    stroke: var(--ink);
+    stroke-opacity: 0.55;
+    stroke-width: 1.2;
+  }
+#viz-erp .wedge.past { fill: var(--past); fill-opacity: 0.16; }
+#viz-erp .wedge.present { fill: var(--present); fill-opacity: 0.2; }
+#viz-erp .wedge.future { fill: var(--future); fill-opacity: 0.16; }
+#viz-erp .t-line {
+    stroke: var(--ink);
+    stroke-opacity: 0.5;
+    stroke-width: 1;
+    stroke-dasharray: 3 4;
+  }
+#viz-erp .label {
+    font-family: var(--serif);
+    font-size: 13px;
+    fill: var(--dim);
+  }
+#viz-erp .label.center { text-anchor: middle; }
+#viz-erp .label.end { text-anchor: end; }
+#viz-erp .label.ink { fill: var(--ink); }
+#viz-erp .it { font-family: var(--math); font-style: italic; }
+#viz-erp .panel-name {
+    font-family: var(--math);
+    font-style: italic;
+    font-size: 20px;
+  }
+#viz-erp .onset { color: #d8d8d8; }
+#viz-erp .onset.distractor { color: var(--distractor); }
+#viz-erp .onset.in-window.past { color: var(--past); }
+#viz-erp .onset.in-window.present { color: var(--present); }
+#viz-erp .onset.in-window.future { color: var(--future); }
+#viz-erp .onset line { stroke: currentColor; stroke-width: 1.6; }
+#viz-erp .onset circle { fill: currentColor; }
+#viz-erp .onset:not(.in-window) { opacity: 0.55; }
+#viz-erp .eeg-measured {
+    fill: none;
+    stroke: #6c6c6c;
+    stroke-width: 1.2;
+  }
+#viz-erp .eeg-model {
+    fill: none;
+    stroke: var(--eeg);
+    stroke-width: 2;
+  }
+#viz-erp .eeg-dot { fill: var(--eeg); }
+#viz-erp .trf-zone.future { fill: var(--future); fill-opacity: 0.06; }
+#viz-erp .trf-zone.past { fill: var(--past); fill-opacity: 0.06; }
+#viz-erp .curve {
+    fill: none;
+    stroke-width: 2.2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+#viz-erp .curve.true-dashed {
+    stroke: var(--ink);
+    stroke-width: 1.6;
+    stroke-dasharray: 5 5;
+  }
+#viz-erp .curve.erp { stroke: var(--erp); }
+#viz-erp .epoch {
+    fill: none;
+    stroke: var(--erp);
+    stroke-width: 1.3;
+  }
+#viz-erp .contribution line { stroke: currentColor; stroke-width: 2; }
+#viz-erp .contribution circle {
+    fill: var(--bg);
+    stroke: currentColor;
+    stroke-width: 2;
+  }
+#viz-erp .overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+  }
+#viz-erp .overlay path {
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+  }
+#viz-erp .controls {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 32px 14px;
+    border-top: 1px solid #242424;
+    background: #080808;
+    font-size: 15px;
+    color: #cfcfcf;
+  }
+#viz-erp .controls input[type="range"] { flex: 1; }
+#viz-erp button {
+    font: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    background: #1a1a1a;
+    border: 1px solid #353535;
+    border-radius: 6px;
+    padding: 5px 12px;
+    cursor: pointer;
+  }
+#viz-erp button:hover { border-color: #6a6a6a; }
+#viz-erp button.play {
+    min-width: 108px;
+    font-size: 15px;
+    background: var(--ink);
+    color: #000;
+    border-color: var(--ink);
+  }
+#viz-erp input[type="range"] { accent-color: var(--past); }
+#viz-erp button:focus-visible, #viz-erp input:focus-visible {
+    outline: 2px solid var(--past);
+    outline-offset: 2px;
+  }
+#viz-erp .chapter-label {
+    min-width: 9em;
+    text-align: right;
+  }
+@media (max-width: 920px) {
+#viz-erp .stage { grid-template-columns: 1fr; padding: 14px 16px; }
+#viz-erp .intro { padding: 16px 16px 0; }
+#viz-erp .controls { padding: 10px 16px 12px; }
+}
+</style>
+</head>
+<body>
+<section class="viz" id="viz-lagged" aria-label="Producto matricial fila por fila">
+<div class="page">
+  <header class="intro" id="lag-header">
+    <div class="intro-text">
+    <h1>Cada muestra del EEG se predice con una ventana del estímulo</h1>
+    <p class="lede">
+      <span class="sym"><span class="base">y</span><sub>t</sub></span>
+      = Σ<sub>τ</sub>
+      <span class="sym"><span class="base">β</span><sub>τ</sub></span>
+      <span class="sym"><span class="base">S</span><sub>t−τ</sub></span>.
+      Los retardos negativos toman muestras
+      <span class="future-text">futuras</span> del estímulo y los
+      positivos, muestras <span class="past-text">pasadas</span>.
+    </p>
+    </div>
+    <div class="settings">
+      <label>Muestras
+        <input type="number" id="lag-input-n" min="6" max="14">
+      </label>
+      <label>τ mín
+        <input type="number" id="lag-input-tau-min" min="-3" max="0">
+      </label>
+      <label>τ máx
+        <input type="number" id="lag-input-tau-max" min="0" max="4">
+      </label>
+      <label>Velocidad
+        <input type="range" id="lag-input-speed" min="0.25" max="3"
+               step="0.25" value="0.5">
+      </label>
+      <label>
+        <input type="checkbox" id="lag-input-accelerate" checked>
+        Acelerar tras las primeras filas
+      </label>
+      <button id="lag-btn-new-stimulus">Nuevo estímulo</button>
+    </div>
+  </header>
+
+  <main class="stage">
+    <section class="algebra" aria-label="Producto matricial">
+      <div class="equation-fit" id="lag-equation-fit">
+        <div class="equation" id="lag-equation">
+          <div class="block">
+            <div class="block-head"></div>
+            <div class="bracketed vector" id="lag-y-vector"></div>
+          </div>
+          <div class="block">
+            <div class="block-head"></div>
+            <div class="block-body"><span class="op">=</span></div>
+          </div>
+          <div class="block">
+            <div class="block-head tau-head" id="lag-tau-head"></div>
+            <div class="bracketed matrix-grid" id="lag-x-matrix"></div>
+          </div>
+          <div class="block">
+            <div class="block-head"></div>
+            <div class="block-body">
+              <div class="bracketed vector" id="lag-beta-vector"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="expansion" id="lag-expansion"></div>
+      <p class="caption" id="lag-caption" aria-live="polite"></p>
+    </section>
+
+    <section class="plots" aria-label="Estímulo, EEG y TRF">
+      <svg id="lag-plots" role="img"
+           aria-label="Estímulo S(t), EEG y(t) y TRF beta(tau)"></svg>
+    </section>
+  </main>
+
+  <footer class="controls" id="lag-footer">
+    <div class="transport">
+      <button id="lag-btn-prev" aria-label="Paso anterior">◀</button>
+      <button id="lag-btn-play" class="play">Reproducir</button>
+      <button id="lag-btn-next" aria-label="Paso siguiente">▶</button>
+      <input type="range" id="lag-scrubber" min="0" max="1" step="any"
+             value="0" aria-label="Posición de la animación">
+      <span class="position-label" id="lag-position-label"></span>
+    </div>
+  </footer>
+</div>
+
+<svg class="overlay" id="lag-overlay" aria-hidden="true">
+  <path id="lag-link-stimulus"></path>
+  <circle id="lag-link-stimulus-end" r="3"></circle>
+  <path id="lag-link-beta"></path>
+  <circle id="lag-link-beta-end" r="3"></circle>
+  <path id="lag-link-output"></path>
+  <circle id="lag-link-output-end" r="3"></circle>
+</svg>
+</section>
+
+<hr class="double-rule">
+
+<section class="viz" id="viz-erp" aria-label="ERP vs TRF">
+<div class="page">
+  <header class="intro" id="erp-header">
+    <div class="intro-text">
+      <h1>ERP vs TRF: qué pasa cuando las respuestas se superponen</h1>
+      <p class="lede">
+        El ERP promedia épocas alrededor de cada onset. La TRF ajusta
+        <span id="erp-lede-model"></span> por mínimos cuadrados. Si las
+        respuestas no se pisan dan lo mismo; si se pisan, solo la TRF
+        las separa.
+      </p>
+    </div>
+    <div class="settings">
+      <div class="scenario" role="radiogroup" aria-label="Tipo de estímulo">
+        <button role="radio" data-scenario="separated">
+          Onsets separados
+        </button>
+        <button role="radio" data-scenario="overlapping">
+          Onsets superpuestos
+        </button>
+        <button role="radio" data-scenario="distractor">
+          Con distractor
+        </button>
+      </div>
+      <button id="erp-btn-new-stimulus">Nuevo estímulo</button>
+      <label>Velocidad
+        <input type="range" id="erp-input-speed" min="0.25" max="3"
+               step="0.25" value="0.5">
+      </label>
+    </div>
+  </header>
+
+  <main class="stage">
+    <section class="algebra" aria-label="Modelo lineal">
+      <div class="equation-fit" id="erp-equation-fit">
+        <div class="equation" id="erp-equation"></div>
+      </div>
+      <div class="row-product" id="erp-row-product"></div>
+      <div class="estimators">
+        <div class="estimator" id="erp-estimator-erp"></div>
+        <div class="estimator" id="erp-estimator-trf"></div>
+      </div>
+      <p class="caption" id="erp-caption" aria-live="polite"></p>
+    </section>
+
+    <section class="plots" aria-label="Estímulo, EEG y respuestas">
+      <svg id="erp-plots" role="img"
+           aria-label="Onsets, EEG y comparación de ERP y TRF"></svg>
+    </section>
+  </main>
+
+  <footer class="controls" id="erp-footer">
+    <button id="erp-btn-prev" aria-label="Etapa anterior">◀</button>
+    <button id="erp-btn-play" class="play">Reproducir</button>
+    <button id="erp-btn-next" aria-label="Etapa siguiente">▶</button>
+    <input type="range" id="erp-scrubber" min="0" max="1" step="any"
+           value="0" aria-label="Posición de la animación">
+    <span class="chapter-label" id="erp-chapter-label"></span>
+  </footer>
+</div>
+
+<svg class="overlay" id="erp-overlay" aria-hidden="true">
+  <path id="erp-link-row"></path>
+  <path id="erp-link-output"></path>
+  <path id="erp-link-estimator"></path>
+</svg>
+</section>
+
+<script>
+(function () {
+"use strict";
+
+const ROOT = document.getElementById("viz-lagged");
+const byId = id => document.getElementById(`lag-${id}`);
+
+function isActive() {
+  const rect = ROOT.getBoundingClientRect();
+  const middle = window.innerHeight / 2;
+  return rect.top <= middle && rect.bottom >= middle;
+}
+
+
+const DEFAULT_CONFIG = {nSamples: 10, tauMin: -2, tauMax: 3, seed: 7};
+const LIMITS = {nSamples: [6, 14], tauMin: [-3, 0], tauMax: [0, 4]};
+const BASE_DURATIONS_MS = {intro: 900, term: 950, outro: 1100};
+const MINUS = "\u2212";
+const SVG_NS = "http://www.w3.org/2000/svg";
+const PLOT = {
+  width: 640,
+  height: 600,
+  left: 78,
+  right: 630,
+  stim: {top: 28, bottom: 182, base: 120, amp: 52, tickY: 199},
+  wedge: {top: 208, apex: 262},
+  eeg: {top: 266, bottom: 398, base: 332, amp: 54, tickY: 416},
+  trf: {top: 446, bottom: 566, base: 522, amp: 38, tickY: 588},
+};
+
+const state = {
+  pos: 0,
+  playing: false,
+  stopAt: null,
+  lastTime: 0,
+  speed: 0.5,
+  accelerate: true,
+  config: {...DEFAULT_CONFIG},
+};
+let model = null;
+let steps = [];
+let plot = {};
+let captionKey = null;
+const dom = {};
+
+
+// ============================ model ============================
+
+function mulberry32(seed) {
+  return function random() {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function gaussian(random) {
+  const u = 1 - random();
+  const v = random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function trfShape(u) {
+  return (
+    Math.exp(-(((u - 0.4) / 0.25) ** 2))
+    - 0.6 * Math.exp(-(((u - 0.8) / 0.15) ** 2))
+  );
+}
+
+function inclusiveRange(start, end) {
+  return Array.from({length: end - start + 1}, (_, i) => start + i);
+}
+
+function buildModel(config) {
+  const {nSamples, tauMin, tauMax, seed} = config;
+  const lags = inclusiveRange(tauMin, tauMax);
+  const random = mulberry32(seed);
+  const stimulus = Array.from(
+    {length: nSamples},
+    () => Math.max(-1.6, Math.min(1.6, 0.75 * gaussian(random)))
+  );
+  const lagSpan = Math.max(tauMax - tauMin, 1);
+  const beta = lags.map(
+    tau => (lags.length === 1 ? 1 : trfShape((tau - tauMin) / lagSpan))
+  );
+  const rows = Array.from({length: nSamples}, (_, t) => {
+    const terms = lags.map((tau, k) => {
+      const index = t - tau;
+      const inRange = index >= 0 && index < nSamples;
+      const value = inRange ? stimulus[index] : 0;
+      return {tau, index, inRange, value, product: beta[k] * value};
+    });
+    const prefix = [0];
+    terms.forEach(term => prefix.push(prefix.at(-1) + term.product));
+    return {terms, prefix, y: prefix.at(-1)};
+  });
+  return {nSamples, tauMin, tauMax, lags, stimulus, beta, rows};
+}
+
+
+// =========================== timeline ==========================
+
+function buildTimeline(currentModel) {
+  const timeline = [];
+  for (let t = 0; t < currentModel.nSamples; t++) {
+    timeline.push({kind: "intro", t, k: -1});
+    currentModel.lags.forEach((_, k) => {
+      timeline.push({kind: "term", t, k});
+    });
+    timeline.push({kind: "outro", t, k: -1});
+  }
+  return timeline;
+}
+
+function rowSpeedup(t) {
+  return t < 2 ? 1 : Math.min(2 + 1.5 * (t - 2), 6);
+}
+
+function stepDuration(step) {
+  const speedup = state.accelerate ? rowSpeedup(step.t) : 1;
+  return BASE_DURATIONS_MS[step.kind] / speedup;
+}
+
+function locate(pos) {
+  if (pos >= steps.length) {
+    const t = model.nSamples - 1;
+    return {kind: "end", t, k: -1, p: 1, done: true};
+  }
+  const index = Math.floor(pos);
+  return {...steps[index], p: pos - index, done: false};
+}
+
+function usedTermCount(frame) {
+  if (frame.kind === "intro") return 0;
+  if (frame.kind === "term") return frame.k;
+  return model.lags.length;
+}
+
+function partialValue(frame) {
+  const row = model.rows[frame.t];
+  if (frame.kind === "intro") return 0;
+  if (frame.kind !== "term") return row.y;
+  const growth = phase(frame.p, 0.35, 0.95);
+  return row.prefix[frame.k] + growth * row.terms[frame.k].product;
+}
+
+function windowCenter(frame) {
+  if (frame.kind === "intro" && frame.t > 0) {
+    return frame.t - 1 + smooth(frame.p);
+  }
+  return frame.t;
+}
+
+
+// ============================ easing ===========================
+
+function smooth(x) {
+  const inflection = 10;
+  const sigmoid = z => 1 / (1 + Math.exp(-z));
+  const error = sigmoid(-inflection / 2);
+  const value = (sigmoid(inflection * (x - 0.5)) - error)
+    / (1 - 2 * error);
+  return clamp01(value);
+}
+
+function clamp01(x) {
+  return Math.min(1, Math.max(0, x));
+}
+
+function phase(p, start, end) {
+  return smooth(clamp01((p - start) / (end - start)));
+}
+
+function bump(p, end) {
+  return Math.sin(Math.PI * clamp01(p / end));
+}
+
+
+// ========================== formatting =========================
+
+function formatIndex(n) {
+  return n < 0 ? MINUS + Math.abs(n) : String(n);
+}
+
+function formatValue(v) {
+  const magnitude = Math.abs(v).toFixed(2);
+  return (v < 0 && magnitude !== "0.00" ? MINUS : "") + magnitude;
+}
+
+function symbol(base, sub) {
+  return (
+    `<span class="sym"><span class="base">${base}</span>`
+    + `<sub>${sub}</sub></span>`
+  );
+}
+
+function lagClass(tau) {
+  if (tau < 0) return "future";
+  if (tau > 0) return "past";
+  return "present";
+}
+
+
+// ======================== algebra (DOM) ========================
+
+function appendCell(parent, html, className = "") {
+  const cell = document.createElement("div");
+  cell.className = `cell ${className}`.trim();
+  cell.innerHTML = html;
+  parent.append(cell);
+  return cell;
+}
+
+function buildAlgebra() {
+  const {nSamples, lags, rows} = model;
+  dom.equation.style.setProperty("--rows", nSamples);
+  dom.equation.style.setProperty("--cols", lags.length);
+
+  dom.yVector.innerHTML = '<div class="row-highlight"></div>';
+  dom.yHighlight = dom.yVector.firstElementChild;
+  dom.yCells = rows.map((_, t) => appendCell(dom.yVector, symbol("y", t)));
+
+  dom.tauHead.innerHTML = '<span class="tau-label">τ</span>';
+  dom.tauCells = lags.map(tau => {
+    const cell = document.createElement("div");
+    cell.className = `tau-cell ${lagClass(tau)}`;
+    cell.textContent = formatIndex(tau);
+    dom.tauHead.append(cell);
+    return cell;
+  });
+
+  dom.xMatrix.innerHTML = '<div class="row-highlight"></div>';
+  dom.xHighlight = dom.xMatrix.firstElementChild;
+  dom.xCells = rows.map(row => row.terms.map(term => (
+    term.inRange
+      ? appendCell(dom.xMatrix, symbol("S", term.index), lagClass(term.tau))
+      : appendCell(dom.xMatrix, "0", "zero")
+  )));
+
+  dom.betaVector.innerHTML = '<div class="vector-highlight"></div>';
+  dom.betaHighlight = dom.betaVector.firstElementChild;
+  dom.betaCells = lags.map(
+    tau => appendCell(dom.betaVector, symbol("β", formatIndex(tau)))
+  );
+}
+
+function buildExpansion(t) {
+  const row = model.rows[t];
+  const termsHtml = row.terms.map((term, k) => {
+    const sHtml = term.inRange ? symbol("S", term.index) : "0";
+    const sClass = term.inRange ? lagClass(term.tau) : "zero";
+    return (
+      '<span class="term">'
+      + (k > 0 ? '<span class="op">+</span>' : "")
+      + '<span class="term-stack"><span class="term-sym">'
+      + `<span class="term-beta">${symbol("β", formatIndex(term.tau))}`
+      + '</span><span class="term-times">·</span>'
+      + `<span class="term-s ${sClass}">${sHtml}</span></span>`
+      + `<span class="term-val">${formatValue(term.product)}</span>`
+      + "</span></span>"
+    );
+  }).join("");
+  dom.expansion.innerHTML = (
+    `<span class="term lhs-group"><span class="lhs">${symbol("y", t)}`
+    + '</span><span class="op">=</span></span>'
+    + termsHtml
+    + '<span class="term result"><span class="op">=</span>'
+    + '<span class="term-stack"><span class="result-val"></span>'
+    + "</span></span>"
+  );
+  const groups = dom.expansion.querySelectorAll(".term");
+  dom.expansionLhs = groups[0];
+  dom.expansionTerms = Array.from(groups).slice(1, -1);
+  dom.expansionResult = groups[groups.length - 1];
+  dom.expansionResultValue = dom.expansionResult.querySelector(
+    ".result-val"
+  );
+  dom.expansionRow = t;
+}
+
+function fitLayout() {
+  const chrome = dom.header.offsetHeight + dom.footer.offsetHeight;
+  const singleColumn = window.matchMedia("(max-width: 920px)").matches;
+  const stageHeight = singleColumn
+    ? Infinity : Math.max(320, window.innerHeight - chrome - 44);
+  dom.plots.style.maxHeight = singleColumn ? "" : `${stageHeight}px`;
+
+  dom.equation.style.transform = "none";
+  const naturalWidth = dom.equation.offsetWidth;
+  const naturalHeight = dom.equation.offsetHeight;
+  const available = dom.equationFit.clientWidth;
+  const maxHeight = Math.max(220, stageHeight - 210);
+  const scale = Math.min(
+    1.3, available / naturalWidth, maxHeight / naturalHeight
+  );
+  dom.equation.style.transform = `scale(${scale})`;
+  dom.equationFit.style.height = `${naturalHeight * scale}px`;
+}
+
+
+// ========================= plots (SVG) =========================
+
+function svgEl(tag, attributes = {}, parent = null) {
+  const element = document.createElementNS(SVG_NS, tag);
+  for (const [name, value] of Object.entries(attributes)) {
+    element.setAttribute(name, value);
+  }
+  if (parent) parent.append(element);
+  return element;
+}
+
+function svgText(content, attributes, parent) {
+  const element = svgEl("text", attributes, parent);
+  element.innerHTML = content;
+  return element;
+}
+
+function buildScales() {
+  const {nSamples, tauMin, tauMax, lags, stimulus, beta, rows} = model;
+  const iMin = -tauMax;
+  const iMax = nSamples - 1 - tauMin;
+  const timeStep = (PLOT.right - PLOT.left) / (iMax - iMin + 1.4);
+  const stimMax = Math.max(...stimulus.map(Math.abs), 1e-6);
+  const eegMax = Math.max(...rows.map(row => Math.abs(row.y)), 1e-6);
+  const betaMax = Math.max(...beta.map(Math.abs), 1e-6);
+  const tauStep = Math.min(
+    64, (PLOT.right - PLOT.left) / (lags.length + 1.4)
+  );
+  const tauCenter = (PLOT.left + PLOT.right) / 2;
+  const tauMid = (tauMin + tauMax) / 2;
+  return {
+    iMin,
+    iMax,
+    timeStep,
+    dotRadius: Math.min(4.5, timeStep * 0.2),
+    showAllTicks: timeStep >= 22,
+    xTime: i => PLOT.left + (i - iMin + 0.7) * timeStep,
+    yStim: v => PLOT.stim.base - (v / stimMax) * PLOT.stim.amp,
+    yEeg: v => PLOT.eeg.base - (v / eegMax) * PLOT.eeg.amp,
+    xTau: tau => tauCenter + (tau - tauMid) * tauStep,
+    yTrf: v => PLOT.trf.base - (v / betaMax) * PLOT.trf.amp,
+  };
+}
+
+function buildPanelName(name, caption, baseY, color) {
+  svgText(
+    name,
+    {x: 8, y: baseY + 6, class: "panel-name", fill: color},
+    dom.plots
+  );
+  svgText(caption, {x: 8, y: baseY + 26, class: "panel-caption"}, dom.plots);
+}
+
+function buildPlots() {
+  const svg = dom.plots;
+  svg.innerHTML = "";
+  svg.setAttribute("viewBox", `0 0 ${PLOT.width} ${PLOT.height}`);
+  plot = buildScales();
+  const {nSamples, lags, stimulus, beta, rows} = model;
+  const {iMin, iMax, xTime, yStim, yEeg, xTau, yTrf, dotRadius} = plot;
+  const edgeLeft = xTime(iMin - 0.5);
+  const edgeRight = xTime(iMax + 0.5);
+
+  buildPanelName("S(t)", "estímulo", PLOT.stim.base, "var(--past)");
+  buildPanelName("y(t)", "EEG", PLOT.eeg.base, "var(--eeg)");
+  buildPanelName("β(τ)", "TRF", PLOT.trf.base, "var(--beta)");
+
+  const stimHeight = PLOT.stim.bottom - PLOT.stim.top;
+  const eegHeight = PLOT.eeg.bottom - PLOT.eeg.top;
+  const padZones = [[iMin - 0.5, -0.5], [nSamples - 0.5, iMax + 0.5]];
+  for (const [from, to] of padZones) {
+    if (to <= from) continue;
+    const x = xTime(from);
+    const width = xTime(to) - x;
+    svgEl("rect", {
+      x, y: PLOT.stim.top, width, height: stimHeight, class: "pad-zone",
+    }, svg);
+    svgEl("rect", {
+      x, y: PLOT.eeg.top, width, height: eegHeight, class: "pad-zone",
+    }, svg);
+  }
+
+  const back = svgEl("g", {}, svg);
+  plot.band = {};
+  for (const part of ["past", "present", "future"]) {
+    plot.band[part] = svgEl("rect", {
+      y: PLOT.stim.top, height: stimHeight, class: `band-part ${part}`,
+    }, back);
+  }
+  plot.band.outline = svgEl("rect", {
+    y: PLOT.stim.top, height: stimHeight, rx: 5, class: "band-outline",
+  }, back);
+  plot.wedgeGroup = svgEl("g", {}, back);
+  plot.wedge = {};
+  for (const part of ["past", "present", "future"]) {
+    plot.wedge[part] = svgEl(
+      "polygon", {class: `wedge ${part}`}, plot.wedgeGroup
+    );
+  }
+  plot.tLine = svgEl("line", {
+    y1: PLOT.stim.top - 4, y2: PLOT.eeg.bottom, class: "t-line",
+  }, back);
+  plot.tLabel = svgEl("text", {y: PLOT.stim.top - 10, class: "t-label"}, svg);
+
+  for (const baseY of [PLOT.stim.base, PLOT.eeg.base]) {
+    svgEl("line", {
+      x1: edgeLeft, x2: edgeRight, y1: baseY, y2: baseY, class: "axis-line",
+    }, svg);
+  }
+
+  plot.bandTauLabel = svgText(
+    "τ", {y: PLOT.stim.top + 15, class: "band-tau it"}, svg
+  );
+  plot.bandTau = lags.map(tau => svgText(
+    formatIndex(tau),
+    {y: PLOT.stim.top + 15, class: `band-tau ${lagClass(tau)}`},
+    svg
+  ));
+
+  plot.stimItems = new Map();
+  for (let i = iMin; i <= iMax; i++) {
+    const inRange = i >= 0 && i < nSamples;
+    const x = xTime(i);
+    const y = yStim(inRange ? stimulus[i] : 0);
+    const group = svgEl("g", {class: "stem"}, svg);
+    if (inRange) {
+      svgEl("line", {x1: x, x2: x, y1: PLOT.stim.base, y2: y}, group);
+    }
+    svgEl("circle", {
+      cx: x, cy: y, r: inRange ? dotRadius : dotRadius * 0.85,
+      class: inRange ? "dot" : "pad-dot",
+    }, group);
+    const ring = svgEl("circle", {cx: x, cy: y, r: 0, class: "ring"}, group);
+    const tick = svgText(
+      formatIndex(i), {x, y: PLOT.stim.tickY, class: "tick"}, svg
+    );
+    plot.stimItems.set(i, {group, ring, tick, anchor: ring});
+  }
+
+  const ghostPoints = rows.map((row, t) => `${xTime(t)},${yEeg(row.y)}`);
+  svgEl("polyline", {points: ghostPoints.join(" "), class: "eeg-ghost"}, svg);
+  plot.eegItems = rows.map((row, t) => {
+    const x = xTime(t);
+    svgEl("circle", {
+      cx: x, cy: yEeg(row.y), r: dotRadius * 0.6, class: "eeg-ghost-dot",
+    }, svg);
+    const group = svgEl("g", {class: "stem eeg-stem"}, svg);
+    const line = svgEl("line", {
+      x1: x, x2: x, y1: PLOT.eeg.base, y2: PLOT.eeg.base,
+    }, group);
+    const dot = svgEl("circle", {
+      cx: x, cy: PLOT.eeg.base, r: dotRadius, class: "dot",
+    }, group);
+    const tick = svgText(
+      String(t), {x, y: PLOT.eeg.tickY, class: "tick"}, svg
+    );
+    return {group, line, dot, tick};
+  });
+  plot.valueLabel = svgEl("text", {class: "value-label"}, svg);
+
+  const zoneTop = PLOT.trf.top;
+  const zoneHeight = PLOT.trf.bottom - PLOT.trf.top;
+  const lagZones = [
+    ["future", model.tauMin - 0.5, -0.5, "τ < 0: futuro de S"],
+    ["past", 0.5, model.tauMax + 0.5, "τ > 0: pasado de S"],
+  ];
+  for (const [part, from, to, label] of lagZones) {
+    if (to <= from) continue;
+    svgEl("rect", {
+      x: xTau(from), y: zoneTop, width: xTau(to) - xTau(from),
+      height: zoneHeight, class: `trf-zone ${part}`,
+    }, svg);
+    svgText(label, {
+      x: (xTau(from) + xTau(to)) / 2, y: zoneTop + 17,
+      class: `zone-label ${part}`,
+    }, svg);
+  }
+  svgEl("line", {
+    x1: xTau(model.tauMin - 0.5), x2: xTau(model.tauMax + 0.5),
+    y1: PLOT.trf.base, y2: PLOT.trf.base, class: "axis-line",
+  }, svg);
+  plot.trfItems = lags.map((tau, k) => {
+    const x = xTau(tau);
+    const y = yTrf(beta[k]);
+    const group = svgEl("g", {class: "stem trf-stem"}, svg);
+    svgEl("line", {x1: x, x2: x, y1: PLOT.trf.base, y2: y}, group);
+    svgEl("circle", {cx: x, cy: y, r: 4.5, class: "dot"}, group);
+    const ring = svgEl("circle", {cx: x, cy: y, r: 0, class: "ring"}, group);
+    svgText(formatIndex(tau), {
+      x, y: PLOT.trf.tickY, class: `tick ${lagClass(tau)}`,
+    }, svg);
+    return {group, ring};
+  });
+  svgText("τ", {
+    x: xTau(model.tauMax + 0.5) + 14, y: PLOT.trf.tickY,
+    class: "tick it",
+  }, svg);
+}
+
+
+// ============================ render ===========================
+
+function render() {
+  const frame = locate(state.pos);
+  if (dom.expansionRow !== frame.t) buildExpansion(frame.t);
+  renderAlgebra(frame);
+  renderExpansion(frame);
+  renderPlots(frame);
+  renderConnectors(frame);
+  renderCaption(frame);
+  renderControls(frame);
+}
+
+function renderAlgebra(frame) {
+  const {t, kind, k, p, done} = frame;
+  const cellHeight = dom.yCells[0].offsetHeight;
+  const center = windowCenter(frame);
+  const highlightOpacity = done ? 0 : (
+    kind === "intro" && t === 0 ? smooth(p) : 1
+  );
+  for (const highlight of [dom.xHighlight, dom.yHighlight]) {
+    highlight.style.transform = `translateY(${center * cellHeight}px)`;
+    highlight.style.opacity = highlightOpacity;
+  }
+  dom.betaHighlight.style.opacity = highlightOpacity;
+
+  const used = usedTermCount(frame);
+  const focusScale = 1 + 0.18 * bump(p, 0.55);
+  dom.xCells.forEach((rowCells, r) => {
+    const isActive = !done && r === t;
+    rowCells.forEach((cell, j) => {
+      const isFocus = isActive && kind === "term" && j === k;
+      cell.classList.toggle("active-row", isActive);
+      cell.classList.toggle("used", isActive && j < used);
+      cell.classList.toggle("focus", isFocus);
+      cell.style.transform = isFocus ? `scale(${focusScale})` : "";
+    });
+  });
+
+  const rowDone = r => done || r < t || (r === t && kind === "outro");
+  dom.yCells.forEach((cell, r) => {
+    cell.classList.toggle("done", rowDone(r) && !(r === t && !done));
+    cell.classList.toggle("active", !done && r === t);
+    const isLanding = !done && r === t && kind === "outro";
+    cell.style.transform = isLanding
+      ? `scale(${1 + 0.2 * bump(p, 0.6)})` : "";
+    cell.style.color = isLanding && p > 0.3 ? "var(--eeg)" : "";
+  });
+
+  dom.betaCells.forEach((cell, j) => {
+    const isFocus = !done && kind === "term" && j === k;
+    cell.classList.toggle("active", true);
+    cell.classList.toggle("focus", isFocus);
+    cell.style.transform = isFocus ? `scale(${focusScale})` : "";
+  });
+  dom.tauCells.forEach((cell, j) => {
+    cell.classList.toggle("focus", !done && kind === "term" && j === k);
+  });
+}
+
+function renderExpansion(frame) {
+  const {kind, k, p} = frame;
+  const used = usedTermCount(frame);
+  const lhsOpacity = kind === "intro" ? phase(p, 0.2, 0.8) : 1;
+  dom.expansionLhs.style.opacity = lhsOpacity;
+  dom.expansionTerms.forEach((term, j) => {
+    let opacity = j < used ? 1 : 0;
+    if (kind === "term" && j === k) opacity = phase(p, 0.1, 0.45);
+    term.style.opacity = opacity;
+    term.style.transform = `translateY(${(1 - opacity) * 10}px)`;
+  });
+  const resultOpacity = kind === "intro" ? 0 : 1;
+  dom.expansionResult.style.opacity = resultOpacity;
+  dom.expansionResultValue.textContent = formatValue(partialValue(frame));
+  dom.expansionResult.classList.toggle(
+    "final", frame.done || (kind === "outro" && p > 0.25)
+  );
+}
+
+function setSpan(element, from, to) {
+  const x1 = plot.xTime(from);
+  const x2 = plot.xTime(to);
+  element.setAttribute("x", Math.min(x1, x2));
+  element.setAttribute("width", Math.max(0, Math.abs(x2 - x1)));
+}
+
+function renderPlots(frame) {
+  const {t, kind, k, p, done} = frame;
+  const {tauMin, tauMax, lags, rows} = model;
+  const {xTime, yEeg} = plot;
+  const center = windowCenter(frame);
+  const bandOpacity = done ? 0 : (
+    kind === "intro" && t === 0 ? smooth(p) : 1
+  );
+
+  setSpan(plot.band.past, center - tauMax - 0.5, center - 0.5);
+  setSpan(plot.band.present, center - 0.5, center + 0.5);
+  setSpan(plot.band.future, center + 0.5, center - tauMin + 0.5);
+  setSpan(plot.band.outline, center - tauMax - 0.5, center - tauMin + 0.5);
+  for (const part of ["past", "present", "future", "outline"]) {
+    plot.band[part].style.opacity = bandOpacity;
+  }
+
+  const apex = `${xTime(center)},${PLOT.wedge.apex}`;
+  const edges = {
+    past: [center - tauMax - 0.5, center - 0.5],
+    present: [center - 0.5, center + 0.5],
+    future: [center + 0.5, center - tauMin + 0.5],
+  };
+  for (const [part, [from, to]] of Object.entries(edges)) {
+    plot.wedge[part].setAttribute("points", [
+      `${xTime(from)},${PLOT.wedge.top}`,
+      `${xTime(to)},${PLOT.wedge.top}`,
+      apex,
+    ].join(" "));
+  }
+  plot.wedgeGroup.style.opacity = bandOpacity;
+
+  plot.tLine.setAttribute("x1", xTime(center));
+  plot.tLine.setAttribute("x2", xTime(center));
+  plot.tLine.style.opacity = bandOpacity;
+  plot.tLabel.setAttribute("x", xTime(center));
+  plot.tLabel.innerHTML = `<tspan class="it">t</tspan> = ${t}`;
+  plot.tLabel.style.opacity = bandOpacity;
+
+  plot.bandTauLabel.setAttribute("x", xTime(center - tauMax - 0.5) - 8);
+  plot.bandTauLabel.style.opacity = bandOpacity;
+  lags.forEach((tau, j) => {
+    const label = plot.bandTau[j];
+    label.setAttribute("x", xTime(center - tau));
+    label.style.opacity = bandOpacity;
+    label.classList.toggle("focus", !done && kind === "term" && j === k);
+  });
+
+  const displayRow = kind === "intro" && p < 0.5 ? t - 1 : t;
+  const windowShown = !done && displayRow >= 0;
+  const used = usedTermCount(frame);
+  const focusIndex = !done && kind === "term" ? t - lags[k] : null;
+  const ringPulse = bump(p, 0.6);
+  for (const [i, item] of plot.stimItems) {
+    const tau = displayRow - i;
+    const inWindow = windowShown && tau >= tauMin && tau <= tauMax;
+    const lagIndex = tau - tauMin;
+    const isPending = inWindow && lagIndex >= used && i !== focusIndex;
+    const colorClass = inWindow ? lagClass(tau) : "";
+    item.group.setAttribute(
+      "class", `stem ${colorClass} ${isPending ? "pending" : ""}`
+    );
+    item.tick.setAttribute("class", `tick ${colorClass}`);
+    item.tick.style.opacity = plot.showAllTicks || i % 2 === 0
+      || inWindow ? 1 : 0;
+    const isFocus = i === focusIndex;
+    item.ring.setAttribute(
+      "r", isFocus ? plot.dotRadius + 4 + 4 * ringPulse : 0
+    );
+  }
+
+  const active = partialValue(frame);
+  rows.forEach((row, r) => {
+    const item = plot.eegItems[r];
+    const isActive = !done && r === t;
+    const isDone = done || r < t;
+    let value = null;
+    if (isDone) value = row.y;
+    if (isActive) value = active;
+    const visible = value !== null;
+    const y = visible ? yEeg(value) : PLOT.eeg.base;
+    item.line.setAttribute("y2", y);
+    item.dot.setAttribute("cy", y);
+    item.group.style.opacity = !visible ? 0 : (
+      isActive && kind === "intro" ? smooth(p) : 1
+    );
+    item.group.setAttribute(
+      "class", `stem eeg-stem ${isActive ? "active" : ""}`
+    );
+    item.tick.setAttribute("class", `tick ${isActive ? "eeg-now" : ""}`);
+    item.tick.style.opacity = plot.showAllTicks || r % 2 === 0
+      || isActive ? 1 : 0;
+  });
+
+  const showValue = !done && kind !== "intro";
+  plot.valueLabel.setAttribute("x", xTime(t) + plot.dotRadius + 6);
+  plot.valueLabel.setAttribute("y", yEeg(active) + 5);
+  plot.valueLabel.innerHTML = (
+    `<tspan class="it">y</tspan><tspan dy="4" font-size="10">${t}</tspan>`
+    + `<tspan dy="-4"> = ${formatValue(active)}</tspan>`
+  );
+  plot.valueLabel.style.opacity = showValue ? 1 : 0;
+
+  plot.trfItems.forEach((item, j) => {
+    const isFocus = !done && kind === "term" && j === k;
+    const isPending = !done && j >= used && !isFocus;
+    item.group.setAttribute(
+      "class", `stem trf-stem ${isPending ? "pending" : ""}`
+    );
+    item.ring.setAttribute("r", isFocus ? 8 + 4 * ringPulse : 0);
+  });
+}
+
+
+// ========================== connectors =========================
+
+function anchorPoint(element, side) {
+  const rect = element.getBoundingClientRect();
+  const x = side === "right" ? rect.right
+    : side === "left" ? rect.left
+      : rect.left + rect.width / 2;
+  return {x, y: rect.top + rect.height / 2};
+}
+
+function drawConnector(pathId, from, to, color, progress) {
+  const path = byId(pathId);
+  const end = byId(`${pathId}-end`);
+  if (progress <= 0) {
+    path.style.opacity = 0;
+    end.style.opacity = 0;
+    return;
+  }
+  const origin = byId("overlay").getBoundingClientRect();
+  from = {x: from.x - origin.left, y: from.y - origin.top};
+  to = {x: to.x - origin.left, y: to.y - origin.top};
+  const bend = (to.x - from.x) * 0.5;
+  path.setAttribute("d", (
+    `M ${from.x} ${from.y} `
+    + `C ${from.x + bend} ${from.y}, ${to.x - bend} ${to.y}, `
+    + `${to.x} ${to.y}`
+  ));
+  const length = path.getTotalLength();
+  path.style.stroke = color;
+  path.style.strokeDasharray = `${length}`;
+  path.style.strokeDashoffset = `${length * (1 - progress)}`;
+  path.style.opacity = 0.9;
+  end.setAttribute("cx", to.x);
+  end.setAttribute("cy", to.y);
+  end.style.fill = color;
+  end.style.opacity = progress > 0.97 ? 1 : 0;
+}
+
+function renderConnectors(frame) {
+  const {t, kind, k, p, done} = frame;
+  const isTerm = !done && kind === "term";
+  const isOutro = !done && kind === "outro";
+  const drawProgress = phase(p, 0, 0.45);
+
+  if (isTerm) {
+    const term = model.rows[t].terms[k];
+    const stimItem = plot.stimItems.get(term.index);
+    const color = term.inRange
+      ? `var(--${lagClass(term.tau)})` : "var(--dim)";
+    drawConnector(
+      "link-stimulus",
+      anchorPoint(dom.xCells[t][k], "right"),
+      anchorPoint(stimItem.anchor, "center"),
+      color,
+      drawProgress
+    );
+    drawConnector(
+      "link-beta",
+      anchorPoint(dom.betaCells[k], "right"),
+      anchorPoint(plot.trfItems[k].ring, "center"),
+      "var(--beta)",
+      drawProgress
+    );
+  } else {
+    drawConnector("link-stimulus", null, null, null, 0);
+    drawConnector("link-beta", null, null, null, 0);
+  }
+
+  if (isOutro) {
+    drawConnector(
+      "link-output",
+      anchorPoint(dom.expansionResultValue, "right"),
+      anchorPoint(plot.eegItems[t].dot, "center"),
+      "var(--eeg)",
+      drawProgress
+    );
+  } else {
+    drawConnector("link-output", null, null, null, 0);
+  }
+}
+
+
+// =========================== caption ===========================
+
+function describeLag(term, t) {
+  const sHtml = symbol("S", formatIndex(term.index));
+  const distance = Math.abs(term.tau);
+  const unit = distance === 1 ? "muestra" : "muestras";
+  if (!term.inRange) {
+    const where = term.index < 0
+      ? "antes del comienzo" : "después del final";
+    return (
+      `τ = ${formatIndex(term.tau)}: ${sHtml} cae ${where} del registro,`
+      + " así que vale 0."
+    );
+  }
+  if (term.tau === 0) {
+    return `τ = 0: ${sHtml} es la muestra presente, en <i>t</i> = ${t}.`;
+  }
+  const direction = term.tau < 0
+    ? '<span class="future-text">en el futuro</span>'
+    : '<span class="past-text">en el pasado</span>';
+  return (
+    `τ = ${formatIndex(term.tau)}: ${sHtml} está ${distance} ${unit} `
+    + `${direction} de <i>t</i> = ${t}.`
+  );
+}
+
+function renderCaption(frame) {
+  const key = `${frame.kind}:${frame.t}:${frame.k}`;
+  if (key === captionKey) return;
+  captionKey = key;
+  const {t, kind, k} = frame;
+  const {tauMin, tauMax, rows} = model;
+  let html;
+  if (frame.done) {
+    html = (
+      "Cada fila de <i>X</i> por β dio una muestra de <i>y</i>. "
+      + "Recorrer todas las filas es convolucionar el estímulo con la TRF."
+    );
+  } else if (kind === "intro") {
+    html = (
+      `Fila <i>t</i> = ${t}: la ventana va de `
+      + `${symbol("S", formatIndex(t - tauMax))} a `
+      + `${symbol("S", formatIndex(t - tauMin))}.`
+    );
+  } else if (kind === "term") {
+    html = describeLag(rows[t].terms[k], t);
+  } else {
+    html = (
+      `La suma ponderada da ${symbol("y", t)} = `
+      + `${formatValue(rows[t].y)}.`
+    );
+  }
+  dom.caption.innerHTML = html;
+}
+
+
+// ========================== controls ===========================
+
+function renderControls(frame) {
+  dom.scrubber.max = steps.length;
+  dom.scrubber.value = state.pos;
+  dom.playButton.textContent = state.playing ? "Pausar" : "Reproducir";
+  dom.positionLabel.innerHTML = frame.done
+    ? "terminado"
+    : `<i>t</i> = ${frame.t} de ${model.nSamples - 1}`;
+}
+
+function tick(now) {
+  if (!state.playing) return;
+  let remaining = (now - state.lastTime) * state.speed;
+  state.lastTime = now;
+  const limit = state.stopAt ?? steps.length;
+  while (remaining > 0 && state.pos < limit) {
+    const index = Math.floor(state.pos);
+    const duration = stepDuration(steps[index]);
+    const left = (index + 1 - state.pos) * duration;
+    if (remaining < left) {
+      state.pos += remaining / duration;
+      remaining = 0;
+    } else {
+      state.pos = index + 1;
+      remaining -= left;
+    }
+  }
+  if (state.pos >= limit) {
+    state.pos = limit;
+    pause();
+  }
+  render();
+  if (state.playing) requestAnimationFrame(tick);
+}
+
+function play(stopAt = null) {
+  if (state.pos >= steps.length) state.pos = 0;
+  state.stopAt = stopAt;
+  state.playing = true;
+  state.lastTime = performance.now();
+  requestAnimationFrame(tick);
+  render();
+}
+
+function pause() {
+  state.playing = false;
+  state.stopAt = null;
+  render();
+}
+
+function stepForward() {
+  if (state.pos >= steps.length) return;
+  play(Math.floor(state.pos) + 1);
+}
+
+function stepBackward() {
+  pause();
+  const index = Math.floor(state.pos);
+  state.pos = state.pos - index > 1e-6 ? index : Math.max(0, index - 1);
+  render();
+}
+
+function readConfig() {
+  const clampInput = (input, [low, high], fallback) => {
+    const value = Number.parseInt(input.value, 10);
+    const clamped = Number.isFinite(value)
+      ? Math.min(high, Math.max(low, value)) : fallback;
+    input.value = clamped;
+    return clamped;
+  };
+  return {
+    ...state.config,
+    nSamples: clampInput(
+      dom.inputN, LIMITS.nSamples, state.config.nSamples
+    ),
+    tauMin: clampInput(
+      dom.inputTauMin, LIMITS.tauMin, state.config.tauMin
+    ),
+    tauMax: clampInput(
+      dom.inputTauMax, LIMITS.tauMax, state.config.tauMax
+    ),
+  };
+}
+
+function rebuild(config) {
+  state.playing = false;
+  state.stopAt = null;
+  state.config = config;
+  model = buildModel(config);
+  steps = buildTimeline(model);
+  state.pos = 0;
+  dom.expansionRow = null;
+  captionKey = null;
+  buildAlgebra();
+  buildPlots();
+  fitLayout();
+  render();
+}
+
+function bindControls() {
+  dom.playButton.addEventListener("click", () => {
+    if (state.playing) pause();
+    else play();
+  });
+  dom.nextButton.addEventListener("click", stepForward);
+  dom.prevButton.addEventListener("click", stepBackward);
+  dom.scrubber.addEventListener("input", () => {
+    state.playing = false;
+    state.pos = Number(dom.scrubber.value);
+    render();
+  });
+  for (const input of [dom.inputN, dom.inputTauMin, dom.inputTauMax]) {
+    input.addEventListener("change", () => rebuild(readConfig()));
+  }
+  dom.inputSpeed.addEventListener("input", () => {
+    state.speed = Number(dom.inputSpeed.value);
+  });
+  dom.inputAccelerate.addEventListener("change", () => {
+    state.accelerate = dom.inputAccelerate.checked;
+  });
+  dom.newStimulusButton.addEventListener("click", () => {
+    rebuild({...readConfig(), seed: state.config.seed + 1});
+  });
+  document.addEventListener("keydown", event => {
+    if (!isActive()) return;
+    if (event.target.matches("input[type=number]")) return;
+    if (event.code === "Space") {
+      event.preventDefault();
+      if (state.playing) pause();
+      else play();
+    } else if (event.code === "ArrowRight") {
+      event.preventDefault();
+      stepForward();
+    } else if (event.code === "ArrowLeft") {
+      event.preventDefault();
+      stepBackward();
+    }
+  });
+  window.addEventListener("resize", () => {
+    fitLayout();
+    render();
+  });
+  window.addEventListener("scroll", render, {passive: true});
+}
+
+function main() {
+  Object.assign(dom, {
+    header: byId("header"),
+    footer: byId("footer"),
+    equation: byId("equation"),
+    equationFit: byId("equation-fit"),
+    yVector: byId("y-vector"),
+    tauHead: byId("tau-head"),
+    xMatrix: byId("x-matrix"),
+    betaVector: byId("beta-vector"),
+    expansion: byId("expansion"),
+    caption: byId("caption"),
+    plots: byId("plots"),
+    playButton: byId("btn-play"),
+    nextButton: byId("btn-next"),
+    prevButton: byId("btn-prev"),
+    scrubber: byId("scrubber"),
+    positionLabel: byId("position-label"),
+    inputN: byId("input-n"),
+    inputTauMin: byId("input-tau-min"),
+    inputTauMax: byId("input-tau-max"),
+    inputSpeed: byId("input-speed"),
+    inputAccelerate: byId("input-accelerate"),
+    newStimulusButton: byId("btn-new-stimulus"),
+  });
+  dom.inputN.value = DEFAULT_CONFIG.nSamples;
+  dom.inputTauMin.value = DEFAULT_CONFIG.tauMin;
+  dom.inputTauMax.value = DEFAULT_CONFIG.tauMax;
+  bindControls();
+  rebuild({...DEFAULT_CONFIG});
+  document.fonts.ready.then(() => {
+    fitLayout();
+    render();
+  });
+}
+
+main();
+})();
+</script>
+<script>
+(function () {
+"use strict";
+
+const ROOT = document.getElementById("viz-erp");
+const byId = id => document.getElementById(`erp-${id}`);
+
+function isActive() {
+  const rect = ROOT.getBoundingClientRect();
+  const middle = window.innerHeight / 2;
+  return rect.top <= middle && rect.bottom >= middle;
+}
+
+
+const N_SAMPLES = 600;
+const TAU_MIN = -10;
+const TAU_MAX = 50;
+const NOISE_STD = 0.06;
+const NOISE_AR = 0.6;
+const EDGE_MARGIN = 15;
+const MAX_CONTRIBUTIONS = 8;
+
+const SCENARIOS = {
+  separated: {targetIsi: [70, 95], soa: null},
+  overlapping: {targetIsi: [12, 36], soa: null},
+  distractor: {targetIsi: [72, 95], soa: [8, 30]},
+};
+
+const CHAPTERS = [
+  {id: "sweep", label: "modelo directo", duration: 9000},
+  {id: "epochs", label: "épocas del ERP", duration: 3400},
+  {id: "erp", label: "ERP", duration: 1600},
+  {id: "trf", label: "TRF", duration: 2000},
+];
+
+const COLOR = {
+  ink: "#f4f4f4",
+  past: "#58c4dd",
+  future: "#fc6255",
+  beta: "#f4d345",
+  distractor: "#5cd0b3",
+  eeg: "#83c167",
+  erp: "#d147bd",
+};
+
+const PLOT = {
+  width: 640,
+  height: 628,
+  left: 78,
+  right: 630,
+  stim: {top: 34, bottom: 158},
+  wedge: {top: 162, apex: 212},
+  eeg: {top: 216, bottom: 356, base: 286, amp: 60},
+  trf: {top: 404, bottom: 572, base: 488, amp: 66, gap: 34},
+  legendY: 614,
+};
+
+const state = {
+  pos: 0,
+  playing: false,
+  stopAt: null,
+  lastTime: 0,
+  speed: 0.5,
+  scenario: "overlapping",
+  seed: 3,
+};
+let model = null;
+let plot = {};
+let captionKey = null;
+const dom = {};
+const TOTAL_DURATION = CHAPTERS.reduce((sum, c) => sum + c.duration, 0);
+
+
+// ============================ model ============================
+
+function mulberry32(seed) {
+  return function random() {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function gaussian(random) {
+  const u = 1 - random();
+  const v = random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function randomInt(random, [low, high]) {
+  return low + Math.floor(random() * (high - low + 1));
+}
+
+function inclusiveRange(start, end) {
+  return Array.from({length: end - start + 1}, (_, i) => start + i);
+}
+
+function gaussianBump(tau, center, width, amplitude) {
+  return amplitude * Math.exp(-(((tau - center) / width) ** 2));
+}
+
+function targetResponse(tau) {
+  if (tau < 0) return 0;
+  return (
+    gaussianBump(tau, 5, 2.5, 0.45)
+    + gaussianBump(tau, 11, 3.5, -1.0)
+    + gaussianBump(tau, 22, 6, 0.8)
+  );
+}
+
+function distractorResponse(tau) {
+  if (tau < 0) return 0;
+  return gaussianBump(tau, 8, 3, -0.5) + gaussianBump(tau, 28, 8, 1.1);
+}
+
+function drawOnsets(random, isiRange, stop) {
+  const onsets = [];
+  let onset = EDGE_MARGIN + randomInt(random, [0, 10]);
+  while (onset < stop) {
+    onsets.push(onset);
+    onset += randomInt(random, isiRange);
+  }
+  return onsets;
+}
+
+function convolveOnsets(onsets, response, lags, signal) {
+  for (const onset of onsets) {
+    lags.forEach((tau, j) => {
+      const t = onset + tau;
+      if (t >= 0 && t < N_SAMPLES) signal[t] += response[j];
+    });
+  }
+}
+
+function colouredNoise(random) {
+  const noise = new Float64Array(N_SAMPLES);
+  for (let t = 1; t < N_SAMPLES; t++) {
+    noise[t] = NOISE_AR * noise[t - 1] + NOISE_STD * gaussian(random);
+  }
+  return noise;
+}
+
+function solveSymmetric(matrix, rhs) {
+  const n = rhs.length;
+  const lower = matrix.map(row => Float64Array.from(row));
+  for (let j = 0; j < n; j++) {
+    let diagonal = lower[j][j];
+    for (let k = 0; k < j; k++) diagonal -= lower[j][k] ** 2;
+    lower[j][j] = Math.sqrt(Math.max(diagonal, 1e-12));
+    for (let i = j + 1; i < n; i++) {
+      let value = lower[i][j];
+      for (let k = 0; k < j; k++) value -= lower[i][k] * lower[j][k];
+      lower[i][j] = value / lower[j][j];
+    }
+  }
+  const forward = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    let value = rhs[i];
+    for (let k = 0; k < i; k++) value -= lower[i][k] * forward[k];
+    forward[i] = value / lower[i][i];
+  }
+  const solution = new Float64Array(n);
+  for (let i = n - 1; i >= 0; i--) {
+    let value = forward[i];
+    for (let k = i + 1; k < n; k++) value -= lower[k][i] * solution[k];
+    solution[i] = value / lower[i][i];
+  }
+  return Array.from(solution);
+}
+
+function fitOls(predictors, lags, eeg) {
+  const nLags = lags.length;
+  const nParams = predictors.length * nLags;
+  const xtx = Array.from({length: nParams}, () => new Float64Array(nParams));
+  const xty = new Float64Array(nParams);
+  const indicators = predictors.map(predictor => {
+    const indicator = new Uint8Array(N_SAMPLES);
+    predictor.onsets.forEach(onset => { indicator[onset] = 1; });
+    return indicator;
+  });
+  for (let t = 0; t < N_SAMPLES; t++) {
+    const active = [];
+    indicators.forEach((indicator, p) => {
+      lags.forEach((tau, j) => {
+        const i = t - tau;
+        if (i >= 0 && i < N_SAMPLES && indicator[i]) {
+          active.push(p * nLags + j);
+        }
+      });
+    });
+    for (const a of active) {
+      xty[a] += eeg[t];
+      for (const b of active) xtx[a][b] += 1;
+    }
+  }
+  for (let i = 0; i < nParams; i++) xtx[i][i] += 1e-8;
+  const solution = solveSymmetric(xtx, xty);
+  return predictors.map(
+    (_, p) => solution.slice(p * nLags, (p + 1) * nLags)
+  );
+}
+
+function averageEpochs(onsets, lags, eeg) {
+  const complete = onsets.filter(
+    onset => onset + TAU_MIN >= 0 && onset + TAU_MAX < N_SAMPLES
+  );
+  const epochs = complete.map(onset => lags.map(tau => eeg[onset + tau]));
+  const mean = lags.map(
+    (_, j) => epochs.reduce((sum, epoch) => sum + epoch[j], 0)
+      / Math.max(epochs.length, 1)
+  );
+  return {onsets: complete, epochs, mean};
+}
+
+function relativeError(estimate, truth) {
+  let numerator = 0;
+  let denominator = 0;
+  truth.forEach((value, j) => {
+    numerator += (estimate[j] - value) ** 2;
+    denominator += value ** 2;
+  });
+  return Math.sqrt(numerator / denominator);
+}
+
+function buildModel(scenarioId, seed) {
+  const scenario = SCENARIOS[scenarioId];
+  const random = mulberry32(seed);
+  const lags = inclusiveRange(TAU_MIN, TAU_MAX);
+  const hasDistractor = scenario.soa !== null;
+  const stop = N_SAMPLES - EDGE_MARGIN - (hasDistractor ? 30 : 0);
+  const targetOnsets = drawOnsets(random, scenario.targetIsi, stop);
+  const predictors = [{
+    name: "S",
+    kind: "target",
+    onsets: targetOnsets,
+    truth: lags.map(targetResponse),
+  }];
+  if (hasDistractor) {
+    predictors.push({
+      name: "D",
+      kind: "distractor",
+      onsets: targetOnsets.map(
+        onset => onset + randomInt(random, scenario.soa)
+      ),
+      truth: lags.map(distractorResponse),
+    });
+  }
+
+  const clean = new Float64Array(N_SAMPLES);
+  predictors.forEach(
+    predictor => convolveOnsets(predictor.onsets, predictor.truth, lags, clean)
+  );
+  const noise = colouredNoise(random);
+  const measured = Array.from(clean, (value, t) => value + noise[t]);
+
+  const estimates = fitOls(predictors, lags, measured);
+  predictors.forEach((predictor, p) => {
+    predictor.erp = averageEpochs(predictor.onsets, lags, measured);
+    predictor.trf = estimates[p];
+    predictor.erpError = relativeError(predictor.erp.mean, predictor.truth);
+    predictor.trfError = relativeError(predictor.trf, predictor.truth);
+  });
+  return {
+    scenarioId,
+    hasDistractor,
+    lags,
+    predictors,
+    clean: Array.from(clean),
+    measured,
+  };
+}
+
+function onsetsInWindow(t) {
+  return model.predictors.flatMap((predictor, p) => predictor.onsets
+    .filter(onset => t - onset >= TAU_MIN && t - onset <= TAU_MAX)
+    .map(onset => ({p, onset, tau: t - onset})));
+}
+
+
+// ======================== timeline & easing ====================
+
+function locate(pos) {
+  let start = 0;
+  for (let index = 0; index < CHAPTERS.length; index++) {
+    const chapter = CHAPTERS[index];
+    const isLast = index === CHAPTERS.length - 1;
+    if (pos < start + chapter.duration || isLast) {
+      const p = clamp01((pos - start) / chapter.duration);
+      return {index, id: chapter.id, p, start, end: start + chapter.duration};
+    }
+    start += chapter.duration;
+  }
+  return null;
+}
+
+function chapterAtLeast(frame, id) {
+  return frame.index >= CHAPTERS.findIndex(c => c.id === id);
+}
+
+function sweepTime(frame) {
+  if (frame.id !== "sweep") return N_SAMPLES - 1;
+  return phase(frame.p, 0.02, 0.98) * (N_SAMPLES - 1);
+}
+
+function smooth(x) {
+  const inflection = 10;
+  const sigmoid = z => 1 / (1 + Math.exp(-z));
+  const error = sigmoid(-inflection / 2);
+  const value = (sigmoid(inflection * (x - 0.5)) - error)
+    / (1 - 2 * error);
+  return clamp01(value);
+}
+
+function linearPhase(p, start, end) {
+  return clamp01((p - start) / (end - start));
+}
+
+function phase(p, start, end) {
+  return smooth(linearPhase(p, start, end));
+}
+
+function clamp01(x) {
+  return Math.min(1, Math.max(0, x));
+}
+
+function lagClass(tau) {
+  if (tau < 0) return "future";
+  if (tau > 0) return "past";
+  return "present";
+}
+
+
+// ============================ TeX ==============================
+
+function tex(source, display = false) {
+  if (!window.katex) return `<span class="muted">${source}</span>`;
+  return window.katex.renderToString(source, {
+    throwOnError: false,
+    displayMode: display,
+    strict: "ignore",
+  });
+}
+
+function colored(color, source) {
+  return `\\textcolor{${color}}{${source}}`;
+}
+
+function betaTex(predictor, lag) {
+  const color = predictor.kind === "target" ? COLOR.beta : COLOR.distractor;
+  const superscript = model.hasDistractor ? `^{${predictor.name}}` : "";
+  return colored(color, `\\beta${superscript}_{${lag}}`);
+}
+
+function stimulusIndexTex(rowKey, lagKey) {
+  if (lagKey === "0") return rowKey;
+  if (rowKey === "0") return `-${lagKey}`;
+  return `${rowKey}-${lagKey}`;
+}
+
+function columnSpecs() {
+  const full = [
+    {lag: "\\tau_m", cls: "future"},
+    {dots: true},
+    {lag: "0", cls: "present"},
+    {dots: true},
+    {lag: "\\tau_M", cls: "past"},
+  ];
+  const compact = [
+    {lag: "\\tau_m", cls: "future"},
+    {dots: true},
+    {lag: "\\tau_M", cls: "past"},
+  ];
+  const lagsPerBlock = model.hasDistractor ? compact : full;
+  return model.predictors.flatMap((predictor, p) => lagsPerBlock.map(
+    (spec, j) => ({...spec, predictor, blockStart: p > 0 && j === 0})
+  ));
+}
+
+
+// ======================== algebra (DOM) ========================
+
+const ROW_KEYS = ["0", "vdots", "t", "vdots", "N-1"];
+
+function cellHtml(className, content) {
+  return `<div class="cell ${className}">${content}</div>`;
+}
+
+function buildEquation() {
+  const columns = columnSpecs();
+  const template = columns
+    .map(spec => (spec.dots ? "34px" : "auto"))
+    .join(" ");
+
+  const yCells = ROW_KEYS.map(rowKey => {
+    if (rowKey === "vdots") return cellHtml("", tex("\\vdots"));
+    const content = colored(COLOR.eeg, `y_{${rowKey}}`);
+    return cellHtml(rowKey === "t" ? "row-t" : "", tex(content));
+  }).join("");
+
+  const headCells = columns.map(spec => {
+    const content = spec.dots ? "" : tex(spec.lag);
+    const classes = [
+      "tau-cell", spec.cls ?? "", spec.blockStart ? "block-start" : "",
+    ];
+    return `<div class="${classes.join(" ")}">${content}</div>`;
+  }).join("");
+
+  const matrixCells = ROW_KEYS.flatMap(rowKey => columns.map(spec => {
+    const classes = [
+      rowKey === "t" ? `row-t ${spec.cls ?? ""}` : "",
+      spec.blockStart ? "block-start" : "",
+    ].join(" ");
+    if (rowKey === "vdots") {
+      return cellHtml(classes, spec.dots ? "" : tex("\\vdots"));
+    }
+    if (spec.dots) return cellHtml(classes, tex("\\cdots"));
+    const index = stimulusIndexTex(rowKey, spec.lag);
+    return cellHtml(classes, tex(`${spec.predictor.name}_{${index}}`));
+  })).join("");
+
+  const betaLags = model.hasDistractor
+    ? ["\\tau_m", "vdots", "\\tau_M"]
+    : ["\\tau_m", "vdots", "0", "vdots", "\\tau_M"];
+  const betaCells = model.predictors.flatMap((predictor, p) => betaLags.map(
+    (lag, j) => {
+      const classes = p > 0 && j === 0 ? "block-top" : "";
+      if (lag === "vdots") return cellHtml(classes, tex("\\vdots"));
+      return cellHtml(classes, tex(betaTex(predictor, lag)));
+    }
+  )).join("");
+
+  dom.equation.style.setProperty("--columns", template);
+  dom.equation.innerHTML = (
+    '<div class="block"><div class="block-head"></div>'
+    + `<div class="bracketed vector" id="erp-y-vector">${yCells}`
+    + '<div class="row-highlight"></div></div></div>'
+    + '<div class="block"><div class="block-head"></div>'
+    + '<span class="op">=</span></div>'
+    + '<div class="block"><div class="block-head tau-head">'
+    + `<span class="tau-label">${tex("\\tau")}</span>${headCells}</div>`
+    + `<div class="bracketed matrix-grid">${matrixCells}`
+    + '<div class="row-highlight" id="erp-row-highlight"></div></div></div>'
+    + '<div class="block"><div class="block-head"></div>'
+    + `<div class="bracketed vector" id="erp-beta-vector">${betaCells}`
+    + "</div></div>"
+  );
+  dom.rowHighlight = byId("row-highlight");
+}
+
+function buildRowProduct() {
+  const {predictors, hasDistractor} = model;
+  const future = s => colored(COLOR.future, s);
+  const past = s => colored(COLOR.past, s);
+  const rowEntries = predictors.flatMap(({name}) => (hasDistractor
+    ? [future(`${name}_{t-\\tau_m}`), "\\cdots", past(`${name}_{t-\\tau_M}`)]
+    : [
+      future(`${name}_{t-\\tau_m}`), "\\cdots", `${name}_t`, "\\cdots",
+      past(`${name}_{t-\\tau_M}`),
+    ]));
+  const rowSpec = hasDistractor ? "ccc|ccc" : "ccccc";
+  const rowVector = (
+    `\\left[\\begin{array}{${rowSpec}}${rowEntries.join(" & ")}`
+    + "\\end{array}\\right]"
+  );
+  const columnEntries = predictors.map(predictor => (hasDistractor
+    ? [betaTex(predictor, "\\tau_m"), "\\vdots", betaTex(predictor, "\\tau_M")]
+    : [
+      betaTex(predictor, "\\tau_m"), "\\vdots", betaTex(predictor, "0"),
+      "\\vdots", betaTex(predictor, "\\tau_M"),
+    ]).join(" \\\\ "));
+  const columnVector = (
+    "{\\def\\arraystretch{1.3}\\left[\\begin{array}{c}"
+    + columnEntries.join(" \\\\[8pt] ")
+    + "\\end{array}\\right]}"
+  );
+  const sums = predictors.map(predictor => (
+    "\\displaystyle\\sum_{\\tau=\\tau_m}^{\\tau_M}"
+    + `${betaTex(predictor, "\\tau")}\\, ${predictor.name}_{t-\\tau}`
+  )).join(" + ");
+  const convolutions = predictors.map(predictor => {
+    const beta = betaTex(predictor, "").replace("_{}", "");
+    return `(${predictor.name} * ${beta})(t)`;
+  }).join(" + ");
+
+  dom.rowProduct.innerHTML = [
+    tex(colored(COLOR.eeg, "y_t")),
+    tex("="),
+    tex(rowVector),
+    tex(columnVector),
+    tex("="),
+    tex(sums),
+    tex("="),
+    `<span id="erp-product-conv">${tex(convolutions)}</span>`,
+  ].map(html => `<span>${html}</span>`).join("");
+  dom.productConv = byId("product-conv");
+}
+
+function buildEstimators() {
+  dom.estimatorErp.innerHTML = tex(colored(
+    COLOR.erp,
+    "\\text{ERP}(\\tau) = \\dfrac{1}{K}\\displaystyle\\sum_{k=1}^{K}"
+    + " y_{o_k + \\tau}"
+  ));
+  dom.estimatorTrf.innerHTML = tex(colored(
+    COLOR.beta, "\\hat{\\beta} = (X^\\top X)^{-1} X^\\top y"
+  ));
+}
+
+function fitLayout() {
+  const chrome = dom.header.offsetHeight + dom.footer.offsetHeight;
+  const singleColumn = window.matchMedia("(max-width: 920px)").matches;
+  const stageHeight = singleColumn
+    ? Infinity : Math.max(320, window.innerHeight - chrome - 44);
+  dom.plots.style.maxHeight = singleColumn ? "" : `${stageHeight}px`;
+
+  dom.equation.style.transform = "none";
+  const naturalWidth = dom.equation.offsetWidth;
+  const naturalHeight = dom.equation.offsetHeight;
+  const available = dom.equationFit.clientWidth;
+  const scale = Math.min(
+    1.15, available / naturalWidth, (stageHeight * 0.42) / naturalHeight
+  );
+  dom.equation.style.transform = `scale(${scale})`;
+  dom.equationFit.style.height = `${naturalHeight * scale}px`;
+}
+
+
+// ========================= plots (SVG) =========================
+
+function svgEl(tag, attributes = {}, parent = null) {
+  const element = document.createElementNS(
+    "http://www.w3.org/2000/svg", tag
+  );
+  for (const [name, value] of Object.entries(attributes)) {
+    element.setAttribute(name, value);
+  }
+  if (parent) parent.append(element);
+  return element;
+}
+
+function svgText(content, attributes, parent) {
+  const element = svgEl("text", attributes, parent);
+  element.innerHTML = content;
+  return element;
+}
+
+function lagLabel(subscript) {
+  return (
+    `<tspan class="it">τ</tspan>`
+    + `<tspan dy="4" font-size="10">${subscript}</tspan>`
+  );
+}
+
+function buildTimeScales() {
+  const iMin = -TAU_MAX;
+  const iMax = N_SAMPLES - 1 - TAU_MIN;
+  const step = (PLOT.right - PLOT.left) / (iMax - iMin + 1);
+  const eegMax = Math.max(...model.measured.map(Math.abs), 1e-6);
+  return {
+    iMin,
+    iMax,
+    xTime: i => PLOT.left + (i - iMin + 0.5) * step,
+    yEeg: v => PLOT.eeg.base - (v / eegMax) * PLOT.eeg.amp,
+  };
+}
+
+function buildTrfScales() {
+  const {predictors, hasDistractor} = model;
+  const nLags = model.lags.length;
+  const middle = (PLOT.left + PLOT.right) / 2;
+  const bounds = hasDistractor
+    ? [
+      [PLOT.left, middle - PLOT.trf.gap / 2],
+      [middle + PLOT.trf.gap / 2, PLOT.right],
+    ]
+    : [[PLOT.left + 40, PLOT.right - 40]];
+  const trfMax = Math.max(...predictors.flatMap(
+    predictor => [...predictor.truth, ...predictor.erp.mean, ...predictor.trf]
+  ).map(Math.abs)) * 1.1;
+  const yTrf = v => {
+    const clipped = Math.max(-1.35 * trfMax, Math.min(1.35 * trfMax, v));
+    return PLOT.trf.base - (clipped / trfMax) * PLOT.trf.amp;
+  };
+  const xTau = bounds.map(([x0, x1]) => (
+    tau => x0 + (tau - TAU_MIN + 0.5) * ((x1 - x0) / nLags)
+  ));
+  return {bounds, xTau, yTrf};
+}
+
+function curvePath(values, xTau, yTrf) {
+  return values.map((value, j) => {
+    const command = j === 0 ? "M" : "L";
+    const x = xTau(TAU_MIN + j).toFixed(1);
+    return `${command}${x},${yTrf(value).toFixed(1)}`;
+  }).join(" ");
+}
+
+function buildStimulusPanel(svg) {
+  const {xTime} = plot;
+  const lanes = model.hasDistractor
+    ? [{base: 94, height: 48}, {base: 150, height: 48}]
+    : [{base: 146, height: 88}];
+  const laneColors = ["var(--ink)", "var(--distractor)"];
+  plot.onsets = [];
+  model.predictors.forEach((predictor, p) => {
+    const lane = lanes[p];
+    svgText(`${predictor.name}(t)`, {
+      x: 8, y: lane.base - lane.height / 2 + 6, class: "panel-name",
+      fill: laneColors[p],
+    }, svg);
+    svgEl("line", {
+      x1: xTime(plot.iMin - 0.5), x2: xTime(plot.iMax + 0.5),
+      y1: lane.base, y2: lane.base, class: "axis-line",
+    }, svg);
+    for (const onset of predictor.onsets) {
+      const kindClass = predictor.kind === "distractor" ? "distractor" : "";
+      const group = svgEl("g", {class: `onset ${kindClass}`}, svg);
+      const x = xTime(onset);
+      svgEl("line", {
+        x1: x, x2: x, y1: lane.base, y2: lane.base - lane.height,
+      }, group);
+      svgEl("circle", {cx: x, cy: lane.base - lane.height, r: 2.6}, group);
+      plot.onsets.push({group, onset, p, kindClass});
+    }
+  });
+}
+
+function buildBand(svg) {
+  const {top, bottom} = PLOT.stim;
+  const back = svgEl("g", {}, svg);
+  plot.band = {};
+  for (const part of ["past", "present", "future"]) {
+    plot.band[part] = svgEl("rect", {
+      y: top, height: bottom - top, class: `band-part ${part}`,
+    }, back);
+    plot.band[`wedge-${part}`] = svgEl(
+      "polygon", {class: `wedge ${part}`}, back
+    );
+  }
+  plot.band.outline = svgEl("rect", {
+    y: top, height: bottom - top, rx: 5, class: "band-outline",
+  }, back);
+  plot.band.line = svgEl("line", {
+    y1: top - 10, y2: PLOT.eeg.bottom, class: "t-line",
+  }, back);
+  plot.band.tLabel = svgText(
+    '<tspan class="it">t</tspan>',
+    {y: top - 14, class: "label center ink"},
+    svg
+  );
+  plot.band.pastLabel = svgText(
+    lagLabel("M"), {y: bottom + 13, class: "label end"}, svg
+  );
+  plot.band.futureLabel = svgText(
+    lagLabel("m"), {y: bottom + 13, class: "label"}, svg
+  );
+}
+
+function buildEegPanel(svg) {
+  const {xTime, yEeg} = plot;
+  svgText("y(t)", {
+    x: 8, y: PLOT.eeg.base + 6, class: "panel-name", fill: "var(--eeg)",
+  }, svg);
+  svgText("EEG", {x: 8, y: PLOT.eeg.base + 26, class: "label"}, svg);
+  svgEl("line", {
+    x1: xTime(plot.iMin - 0.5), x2: xTime(plot.iMax + 0.5),
+    y1: PLOT.eeg.base, y2: PLOT.eeg.base, class: "axis-line",
+  }, svg);
+  const toPoints = values => values
+    .map((v, t) => `${xTime(t).toFixed(1)},${yEeg(v).toFixed(1)}`)
+    .join(" ");
+  plot.measured = svgEl("polyline", {
+    points: toPoints(model.measured), class: "eeg-measured",
+  }, svg);
+  const clip = svgEl("clipPath", {id: "erp-model-reveal"}, svg);
+  plot.reveal = svgEl("rect", {
+    x: PLOT.left, y: PLOT.eeg.top - 40,
+    height: PLOT.eeg.bottom - PLOT.eeg.top + 80, width: 0,
+  }, clip);
+  plot.model = svgEl("polyline", {
+    points: toPoints(model.clean), class: "eeg-model",
+    "clip-path": "url(#erp-model-reveal)",
+  }, svg);
+  plot.eegDot = svgEl("circle", {r: 3.5, class: "eeg-dot"}, svg);
+  svgText("0", {
+    x: xTime(0), y: PLOT.eeg.bottom + 16, class: "label center",
+  }, svg);
+  svgText('<tspan class="it">N</tspan> − 1', {
+    x: xTime(N_SAMPLES - 1), y: PLOT.eeg.bottom + 16,
+    class: "label center",
+  }, svg);
+}
+
+function buildTrfPanels(svg) {
+  const {bounds, xTau, yTrf} = plot.trfScales;
+  const {top, bottom, base} = PLOT.trf;
+  plot.trfPanels = model.predictors.map((predictor, p) => {
+    const [x0, x1] = bounds[p];
+    const x = xTau[p];
+    const color = predictor.kind === "target"
+      ? "var(--beta)" : "var(--distractor)";
+    svgEl("rect", {
+      x: x(TAU_MIN - 0.5), y: top, width: x(-0.5) - x(TAU_MIN - 0.5),
+      height: bottom - top, class: "trf-zone future",
+    }, svg);
+    svgEl("rect", {
+      x: x(0.5), y: top, width: x(TAU_MAX + 0.5) - x(0.5),
+      height: bottom - top, class: "trf-zone past",
+    }, svg);
+    svgEl("line", {
+      x1: x0, x2: x1, y1: base, y2: base, class: "axis-line",
+    }, svg);
+    svgEl("line", {
+      x1: x(0), x2: x(0), y1: top, y2: bottom, class: "axis-line",
+    }, svg);
+    const title = model.hasDistractor
+      ? `β<tspan dy="-7" font-size="12">${predictor.name}</tspan>`
+        + '<tspan dy="7">(τ)</tspan>'
+      : "β(τ)";
+    svgText(title, {
+      x: x0 + 6, y: top + 22, class: "panel-name", fill: color,
+    }, svg);
+    if (model.hasDistractor) {
+      svgText(predictor.kind === "target" ? "objetivo" : "distractor", {
+        x: x0 + 6, y: top + 40, class: "label",
+      }, svg);
+    }
+    for (const [tau, subscript] of [[TAU_MIN, "m"], [TAU_MAX, "M"]]) {
+      svgText(lagLabel(subscript), {
+        x: x(tau), y: bottom + 16, class: "label center",
+      }, svg);
+    }
+    svgText("0", {x: x(0), y: bottom + 16, class: "label center"}, svg);
+
+    const panel = {predictor, x, color};
+    panel.trueSolid = svgEl("path", {
+      d: curvePath(predictor.truth, x, yTrf), class: "curve",
+      stroke: color,
+    }, svg);
+    panel.trueDashed = svgEl("path", {
+      d: curvePath(predictor.truth, x, yTrf), class: "curve true-dashed",
+    }, svg);
+    panel.erp = svgEl("path", {
+      d: curvePath(predictor.erp.mean, x, yTrf), class: "curve erp",
+    }, svg);
+    panel.trf = svgEl("path", {
+      d: curvePath(predictor.trf, x, yTrf), class: "curve", stroke: color,
+    }, svg);
+    panel.erpError = svgText(
+      `error ERP ${Math.round(100 * predictor.erpError)} %`,
+      {x: x1 - 6, y: top + 20, class: "label end", style: "fill: var(--erp)"},
+      svg
+    );
+    panel.trfError = svgText(
+      `error TRF ${Math.round(100 * predictor.trfError)} %`,
+      {x: x1 - 6, y: top + 38, class: "label end", style: `fill: ${color}`},
+      svg
+    );
+    panel.contributions = Array.from({length: MAX_CONTRIBUTIONS}, () => {
+      const group = svgEl("g", {class: "contribution"}, svg);
+      return {
+        group,
+        line: svgEl("line", {}, group),
+        dot: svgEl("circle", {r: 3.5}, group),
+      };
+    });
+    return panel;
+  });
+}
+
+function buildEpochs(svg) {
+  const {xTime, yEeg} = plot;
+  const {xTau, yTrf} = plot.trfScales;
+  const target = model.predictors[0];
+  plot.epochs = target.erp.onsets.map((onset, k) => {
+    const from = model.lags.map(tau => [
+      xTime(onset + tau), yEeg(model.measured[onset + tau]),
+    ]);
+    const to = model.lags.map(tau => [
+      xTau[0](tau), yTrf(model.measured[onset + tau]),
+    ]);
+    const element = svgEl("polyline", {class: "epoch"}, svg);
+    return {element, from, to, k};
+  });
+}
+
+function buildLegend(svg) {
+  const group = svgEl("g", {}, svg);
+  const items = [
+    ["verdadera", "curve true-dashed", null],
+    ["ERP (promedio de épocas)", "curve erp", null],
+    ["TRF estimada", "curve", "var(--beta)"],
+  ];
+  let x = PLOT.left + 40;
+  for (const [label, className, stroke] of items) {
+    const attributes = {
+      x1: x, x2: x + 24, y1: PLOT.legendY - 4, y2: PLOT.legendY - 4,
+      class: className,
+    };
+    if (stroke) attributes.stroke = stroke;
+    svgEl("line", attributes, group);
+    const text = svgText(label, {
+      x: x + 32, y: PLOT.legendY, class: "label",
+    }, group);
+    x += 44 + text.getComputedTextLength();
+  }
+  plot.legend = group;
+}
+
+function buildPlots() {
+  const svg = dom.plots;
+  svg.innerHTML = "";
+  svg.setAttribute("viewBox", `0 0 ${PLOT.width} ${PLOT.height}`);
+  plot = buildTimeScales();
+  plot.trfScales = buildTrfScales();
+  const {xTime} = plot;
+  const padZones = [
+    [plot.iMin - 0.5, -0.5], [N_SAMPLES - 0.5, plot.iMax + 0.5],
+  ];
+  for (const [from, to] of padZones) {
+    for (const panel of [PLOT.stim, PLOT.eeg]) {
+      svgEl("rect", {
+        x: xTime(from), y: panel.top, width: xTime(to) - xTime(from),
+        height: panel.bottom - panel.top, class: "pad-zone",
+      }, svg);
+    }
+  }
+  buildBand(svg);
+  buildStimulusPanel(svg);
+  buildEegPanel(svg);
+  buildTrfPanels(svg);
+  buildEpochs(svg);
+  buildLegend(svg);
+}
+
+
+// ============================ render ===========================
+
+function render() {
+  const frame = locate(state.pos);
+  const t = Math.round(sweepTime(frame));
+  renderAlgebra(frame);
+  renderSweep(frame, t);
+  renderEstimation(frame);
+  renderConnectors(frame, t);
+  renderCaption(frame, t);
+  renderControls(frame);
+}
+
+function renderAlgebra(frame) {
+  const sweepActive = frame.id === "sweep";
+  dom.rowHighlight.style.opacity = sweepActive ? 1 : 0.25;
+  const erpShown = chapterAtLeast(frame, "epochs")
+    ? (frame.id === "epochs" ? phase(frame.p, 0, 0.2) : 1) : 0;
+  const trfShown = chapterAtLeast(frame, "trf")
+    ? phase(frame.p, 0, 0.3) : 0;
+  dom.estimatorErp.style.opacity = erpShown;
+  dom.estimatorTrf.style.opacity = frame.id === "trf" ? trfShown : (
+    chapterAtLeast(frame, "trf") ? 1 : 0
+  );
+}
+
+function setSpan(element, from, to) {
+  const x1 = plot.xTime(from);
+  const x2 = plot.xTime(to);
+  element.setAttribute("x", Math.min(x1, x2));
+  element.setAttribute("width", Math.max(0, Math.abs(x2 - x1)));
+}
+
+function renderSweep(frame, t) {
+  const {xTime, yEeg} = plot;
+  const {yTrf} = plot.trfScales;
+  const center = sweepTime(frame);
+  const visible = frame.id === "sweep"
+    ? phase(frame.p, 0, 0.02) : 1 - phase(frame.p, 0, 0.12);
+  const bandOpacity = frame.index > 1 ? 0 : visible;
+
+  const edges = {
+    past: [center - TAU_MAX - 0.5, center - 0.5],
+    present: [center - 0.5, center + 0.5],
+    future: [center + 0.5, center - TAU_MIN + 0.5],
+  };
+  const apex = `${xTime(center)},${PLOT.wedge.apex}`;
+  for (const [part, [from, to]] of Object.entries(edges)) {
+    setSpan(plot.band[part], from, to);
+    plot.band[`wedge-${part}`].setAttribute("points", [
+      `${xTime(from)},${PLOT.wedge.top}`,
+      `${xTime(to)},${PLOT.wedge.top}`,
+      apex,
+    ].join(" "));
+  }
+  setSpan(plot.band.outline, edges.past[0], edges.future[1]);
+  plot.band.line.setAttribute("x1", xTime(center));
+  plot.band.line.setAttribute("x2", xTime(center));
+  plot.band.tLabel.setAttribute("x", xTime(center));
+  plot.band.pastLabel.setAttribute("x", xTime(edges.past[0]) - 2);
+  plot.band.futureLabel.setAttribute("x", xTime(edges.future[1]) + 2);
+  for (const element of Object.values(plot.band)) {
+    element.style.opacity = bandOpacity;
+  }
+
+  const inWindow = frame.index === 0 ? onsetsInWindow(t) : [];
+  const windowByOnset = new Map(
+    inWindow.map(item => [`${item.p}:${item.onset}`, item.tau])
+  );
+  for (const item of plot.onsets) {
+    const tau = windowByOnset.get(`${item.p}:${item.onset}`);
+    const windowClass = tau === undefined
+      ? "" : `in-window ${lagClass(tau)}`;
+    item.group.setAttribute(
+      "class", `onset ${item.kindClass} ${windowClass}`
+    );
+  }
+
+  const reveal = frame.id === "sweep" ? xTime(center) - PLOT.left : 1e4;
+  plot.reveal.setAttribute("width", Math.max(0, reveal));
+  plot.model.style.opacity = frame.index === 0
+    ? 1 : 1 - 0.75 * (frame.id === "epochs" ? phase(frame.p, 0, 0.15) : 1);
+  plot.eegDot.setAttribute("cx", xTime(t));
+  plot.eegDot.setAttribute("cy", yEeg(model.clean[t]));
+  plot.eegDot.style.opacity = bandOpacity;
+
+  plot.trfPanels.forEach((panel, p) => {
+    const items = inWindow.filter(item => item.p === p);
+    panel.contributions.forEach((marker, m) => {
+      const item = items[m];
+      if (!item || bandOpacity === 0) {
+        marker.group.style.opacity = 0;
+        return;
+      }
+      const value = panel.predictor.truth[item.tau - TAU_MIN];
+      const x = panel.x(item.tau);
+      marker.line.setAttribute("x1", x);
+      marker.line.setAttribute("x2", x);
+      marker.line.setAttribute("y1", PLOT.trf.base);
+      marker.line.setAttribute("y2", yTrf(value));
+      marker.dot.setAttribute("cx", x);
+      marker.dot.setAttribute("cy", yTrf(value));
+      marker.group.style.color = `var(--${lagClass(item.tau)})`;
+      marker.group.style.opacity = bandOpacity;
+    });
+  });
+}
+
+function drawIn(path, progress) {
+  const length = path.getTotalLength();
+  path.style.strokeDasharray = `${length}`;
+  path.style.strokeDashoffset = `${length * (1 - progress)}`;
+  path.style.opacity = progress > 0 ? 1 : 0;
+}
+
+function renderEstimation(frame) {
+  const estimationStarted = chapterAtLeast(frame, "epochs");
+  const truthSwap = !estimationStarted ? 0 : (
+    frame.id === "epochs" ? phase(frame.p, 0, 0.15) : 1
+  );
+  const erpProgress = !chapterAtLeast(frame, "erp") ? 0 : (
+    frame.id === "erp" ? phase(frame.p, 0, 0.75) : 1
+  );
+  const trfProgress = !chapterAtLeast(frame, "trf") ? 0 : (
+    frame.id === "trf" ? phase(frame.p, 0.05, 0.8) : 1
+  );
+  const erpLabel = frame.id === "erp" ? phase(frame.p, 0.6, 0.9)
+    : (erpProgress > 0 ? 1 : 0);
+  const trfLabel = frame.id === "trf" ? phase(frame.p, 0.65, 0.95)
+    : (trfProgress > 0 ? 1 : 0);
+
+  plot.trfPanels.forEach(panel => {
+    panel.trueSolid.style.opacity = 1 - truthSwap;
+    panel.trueDashed.style.opacity = 0.85 * truthSwap;
+    drawIn(panel.erp, erpProgress);
+    drawIn(panel.trf, trfProgress);
+    panel.erpError.style.opacity = erpLabel;
+    panel.trfError.style.opacity = trfLabel;
+  });
+  plot.legend.style.opacity = truthSwap;
+  plot.measured.style.opacity = estimationStarted ? 1 : 0.55;
+  renderEpochs(frame);
+}
+
+function renderEpochs(frame) {
+  const count = plot.epochs.length;
+  const inEpochs = frame.id === "epochs";
+  const afterEpochs = chapterAtLeast(frame, "erp");
+  const settledOpacity = afterEpochs && frame.id === "erp"
+    ? 0.35 - 0.2 * phase(frame.p, 0.2, 0.8) : 0.15;
+  for (const epoch of plot.epochs) {
+    if (!inEpochs && !afterEpochs) {
+      epoch.element.style.opacity = 0;
+      continue;
+    }
+    let progress = 1;
+    let opacity = afterEpochs ? settledOpacity : 0.9;
+    if (inEpochs) {
+      const start = 0.18 + (0.5 * epoch.k) / Math.max(count, 1);
+      progress = phase(frame.p, start, start + 0.3);
+      const highlight = phase(frame.p, 0.05, 0.18);
+      opacity = progress >= 1 ? 0.35 : 0.9 * highlight;
+    }
+    const points = epoch.from.map(([x0, y0], j) => {
+      const [x1, y1] = epoch.to[j];
+      const x = x0 + (x1 - x0) * progress;
+      const y = y0 + (y1 - y0) * progress;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    });
+    epoch.element.setAttribute("points", points.join(" "));
+    epoch.element.style.opacity = opacity;
+  }
+}
+
+
+// ========================== connectors =========================
+
+function svgPoint(x, y) {
+  const point = dom.plots.createSVGPoint();
+  point.x = x;
+  point.y = y;
+  return point.matrixTransform(dom.plots.getScreenCTM());
+}
+
+function rightEdge(element) {
+  const rect = element.getBoundingClientRect();
+  return {x: rect.right, y: rect.top + rect.height / 2};
+}
+
+function drawConnector(pathId, from, to, color, progress) {
+  const path = byId(pathId);
+  if (progress <= 0) {
+    path.style.opacity = 0;
+    return;
+  }
+  const origin = byId("overlay").getBoundingClientRect();
+  from = {x: from.x - origin.left, y: from.y - origin.top};
+  to = {x: to.x - origin.left, y: to.y - origin.top};
+  const bend = (to.x - from.x) * 0.5;
+  path.setAttribute("d", (
+    `M ${from.x} ${from.y} C ${from.x + bend} ${from.y}, `
+    + `${to.x - bend} ${to.y}, ${to.x} ${to.y}`
+  ));
+  const length = path.getTotalLength();
+  path.style.stroke = color;
+  path.style.strokeDasharray = `${length}`;
+  path.style.strokeDashoffset = `${length * (1 - progress)}`;
+  path.style.opacity = 0.85;
+}
+
+function peakPoint(values, x, yTrf) {
+  let best = 0;
+  values.forEach((value, j) => {
+    if (Math.abs(value) > Math.abs(values[best])) best = j;
+  });
+  return svgPoint(x(TAU_MIN + best), yTrf(values[best]));
+}
+
+function renderConnectors(frame, t) {
+  const {xTime, yEeg} = plot;
+  const inSweep = frame.id === "sweep";
+  const sweepProgress = inSweep ? phase(frame.p, 0, 0.03) : 0;
+  drawConnector(
+    "link-row",
+    rightEdge(dom.rowHighlight),
+    svgPoint(xTime(sweepTime(frame)), PLOT.stim.top - 20),
+    COLOR.ink,
+    sweepProgress
+  );
+  drawConnector(
+    "link-output",
+    rightEdge(dom.productConv),
+    svgPoint(xTime(t), yEeg(model.clean[t])),
+    COLOR.eeg,
+    sweepProgress
+  );
+
+  const {yTrf} = plot.trfScales;
+  const target = plot.trfPanels[0];
+  if (frame.id === "erp") {
+    drawConnector(
+      "link-estimator",
+      rightEdge(dom.estimatorErp),
+      peakPoint(target.predictor.erp.mean, target.x, yTrf),
+      COLOR.erp,
+      phase(frame.p, 0, 0.5)
+    );
+  } else if (frame.id === "trf") {
+    drawConnector(
+      "link-estimator",
+      rightEdge(dom.estimatorTrf),
+      peakPoint(target.predictor.trf, target.x, yTrf),
+      COLOR.beta,
+      phase(frame.p, 0, 0.5)
+    );
+  } else {
+    drawConnector("link-estimator", null, null, null, 0);
+  }
+}
+
+
+// =========================== caption ===========================
+
+function sweepCaption(t) {
+  const items = onsetsInWindow(t);
+  const future = items.some(item => item.tau < 0);
+  const yt = tex("y_t");
+  const futureNote = future
+    ? " Hay onsets después de <i>t</i>: entran por los retardos"
+      + " negativos, donde la respuesta verdadera vale 0."
+    : "";
+  if (items.length === 0) {
+    return `No hay onsets en la ventana: la fila es toda ceros y ${yt} = 0.`;
+  }
+  if (items.length === 1) {
+    return (
+      `Un onset en la ventana: ${yt} es un solo valor de ${tex("\\beta")},`
+      + ` el del retardo ${tex("\\tau = t - o")}.${futureNote}`
+    );
+  }
+  const mixed = new Set(items.map(item => item.p)).size > 1;
+  const what = mixed
+    ? `valores de ${tex("\\beta^S")} y de ${tex("\\beta^D")}`
+    : `valores de ${tex("\\beta")}`;
+  return (
+    `${items.length} onsets en la ventana: ${yt} suma ${items.length} `
+    + `${what}. Las respuestas se superponen.${futureNote}`
+  );
+}
+
+function estimationCaption(scenarioId, chapterId) {
+  const window = `${tex("\\tau_m")} a ${tex("\\tau_M")}`;
+  const captions = {
+    separated: {
+      epochs: `Se corta una época de ${window} alrededor de cada onset.`
+        + " Acá las épocas no se pisan.",
+      erp: "Con onsets separados, el promedio de épocas coincide con la"
+        + " respuesta verdadera.",
+      trf: `La TRF da lo mismo que el ERP: si las épocas no se pisan,`
+        + ` ${tex("X^\\top X")} es diagonal y ${tex("\\hat{\\beta}")}`
+        + " es el promedio de las épocas.",
+    },
+    overlapping: {
+      epochs: "Las épocas se pisan: cada una arrastra las respuestas a los"
+        + " onsets vecinos.",
+      erp: "El promedio mezcla respuestas vecinas: el ERP sale deformado,"
+        + ` incluso antes de ${tex("\\tau = 0")}.`,
+      trf: "La TRF resuelve el sistema completo: desarma la superposición"
+        + " y recupera la respuesta.",
+    },
+    distractor: {
+      epochs: "Cada época del objetivo incluye también la respuesta al"
+        + " distractor que llegó poco después.",
+      erp: "El ERP del objetivo absorbe la respuesta al distractor, y el"
+        + " del distractor absorbe la del objetivo.",
+      trf: `Con ${tex("S")} y ${tex("D")} en el mismo modelo, la TRF`
+        + " separa las dos respuestas.",
+    },
+  };
+  return captions[scenarioId][chapterId];
+}
+
+function renderCaption(frame, t) {
+  const key = frame.id === "sweep"
+    ? `sweep:${onsetsInWindow(t).map(i => `${i.p}${i.tau}`).join()}`
+    : `${frame.id}:${model.scenarioId}`;
+  if (key === captionKey) return;
+  captionKey = key;
+  dom.caption.innerHTML = frame.id === "sweep"
+    ? sweepCaption(t)
+    : estimationCaption(model.scenarioId, frame.id);
+}
+
+
+// ========================== controls ===========================
+
+function renderControls(frame) {
+  dom.scrubber.max = TOTAL_DURATION;
+  dom.scrubber.value = state.pos;
+  dom.playButton.textContent = state.playing ? "Pausar" : "Reproducir";
+  dom.chapterLabel.textContent = state.pos >= TOTAL_DURATION
+    ? "terminado" : CHAPTERS[frame.index].label;
+  dom.scenarioButtons.forEach(button => {
+    const checked = button.dataset.scenario === state.scenario;
+    button.setAttribute("aria-checked", String(checked));
+  });
+}
+
+function tick(now) {
+  if (!state.playing) return;
+  const limit = state.stopAt ?? TOTAL_DURATION;
+  const elapsed = (now - state.lastTime) * state.speed;
+  state.pos = Math.min(limit, state.pos + elapsed);
+  state.lastTime = now;
+  if (state.pos >= limit) {
+    state.playing = false;
+    state.stopAt = null;
+  }
+  render();
+  if (state.playing) requestAnimationFrame(tick);
+}
+
+function play(stopAt = null) {
+  if (state.pos >= TOTAL_DURATION) state.pos = 0;
+  state.stopAt = stopAt;
+  state.playing = true;
+  state.lastTime = performance.now();
+  requestAnimationFrame(tick);
+  render();
+}
+
+function pause() {
+  state.playing = false;
+  state.stopAt = null;
+  render();
+}
+
+function stepForward() {
+  if (state.pos >= TOTAL_DURATION) return;
+  const frame = locate(state.pos);
+  play(frame.end);
+}
+
+function stepBackward() {
+  const frame = locate(state.pos);
+  const atStart = state.pos - frame.start < 50;
+  const target = atStart && frame.index > 0
+    ? locate(frame.start - 1).start : frame.start;
+  state.playing = false;
+  state.stopAt = null;
+  state.pos = target;
+  render();
+}
+
+function rebuild() {
+  state.playing = false;
+  state.stopAt = null;
+  state.pos = 0;
+  captionKey = null;
+  model = buildModel(state.scenario, state.seed);
+  dom.ledeModel.innerHTML = tex("y = X\\beta");
+  buildEquation();
+  buildRowProduct();
+  buildEstimators();
+  buildPlots();
+  fitLayout();
+  render();
+}
+
+function bindControls() {
+  dom.playButton.addEventListener("click", () => {
+    if (state.playing) pause();
+    else play();
+  });
+  dom.nextButton.addEventListener("click", stepForward);
+  dom.prevButton.addEventListener("click", stepBackward);
+  dom.scrubber.addEventListener("input", () => {
+    state.playing = false;
+    state.pos = Number(dom.scrubber.value);
+    render();
+  });
+  dom.scenarioButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      state.scenario = button.dataset.scenario;
+      rebuild();
+    });
+  });
+  dom.newStimulusButton.addEventListener("click", () => {
+    state.seed += 1;
+    rebuild();
+  });
+  dom.inputSpeed.addEventListener("input", () => {
+    state.speed = Number(dom.inputSpeed.value);
+  });
+  document.addEventListener("keydown", event => {
+    if (!isActive()) return;
+    if (event.code === "Space") {
+      event.preventDefault();
+      if (state.playing) pause();
+      else play();
+    } else if (event.code === "ArrowRight") {
+      event.preventDefault();
+      stepForward();
+    } else if (event.code === "ArrowLeft") {
+      event.preventDefault();
+      stepBackward();
+    }
+  });
+  window.addEventListener("resize", () => {
+    fitLayout();
+    render();
+  });
+  window.addEventListener("scroll", render, {passive: true});
+}
+
+function main() {
+  Object.assign(dom, {
+    header: byId("header"),
+    footer: byId("footer"),
+    ledeModel: byId("lede-model"),
+    equation: byId("equation"),
+    equationFit: byId("equation-fit"),
+    rowProduct: byId("row-product"),
+    estimatorErp: byId("estimator-erp"),
+    estimatorTrf: byId("estimator-trf"),
+    caption: byId("caption"),
+    plots: byId("plots"),
+    playButton: byId("btn-play"),
+    nextButton: byId("btn-next"),
+    prevButton: byId("btn-prev"),
+    scrubber: byId("scrubber"),
+    chapterLabel: byId("chapter-label"),
+    newStimulusButton: byId("btn-new-stimulus"),
+    inputSpeed: byId("input-speed"),
+    scenarioButtons: Array.from(document.querySelectorAll("[data-scenario]")),
+  });
+  bindControls();
+  rebuild();
+  document.fonts.ready.then(() => {
+    fitLayout();
+    render();
+  });
+}
+
+window.addEventListener("load", main);
+})();
+</script>
+</body>
+</html>
