@@ -773,6 +773,380 @@ html, body {
 #viz-erp .intro { padding: 16px 16px 0; }
 #viz-erp .controls { padding: 10px 16px 12px; }
 }
+#viz-backward {
+    --bg: #000000;
+    --ink: #f4f4f4;
+    --dim: #8a8a8a;
+    --present: #ffffff;
+    --future: #fc6255;
+    --beta: #f4d345;
+    --eeg: #83c167;
+    --eeg-dim: #4f7340;
+    --recon: #ff862f;
+    --pattern: #d147bd;
+    --ignored: #58c4dd;
+    --serif: "KaTeX_Main", "Latin Modern Roman", "CMU Serif",
+      "Times New Roman", serif;
+    --math: "KaTeX_Math", "Latin Modern Math", "Cambria Math",
+      "Times New Roman", serif;
+    --cell-h: 40px;
+    --bracket-pad: 6px;
+  }
+#viz-backward {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.45;
+  }
+#viz-backward .katex { font-size: 1.08em; }
+#viz-backward .page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+#viz-backward .intro {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px 32px;
+    padding: 18px 32px 0;
+  }
+#viz-backward .intro-text { max-width: 50em; }
+#viz-backward .intro h1 {
+    font-weight: 400;
+    font-size: 25px;
+    line-height: 1.2;
+    margin: 0 0 4px;
+  }
+#viz-backward .lede {
+    margin: 0;
+    color: #c4c4c4;
+  }
+#viz-backward .settings {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+    font-size: 14px;
+    color: #cfcfcf;
+  }
+#viz-backward .settings label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+#viz-backward .settings input[type="range"] { width: 90px; }
+#viz-backward .scenario {
+    display: inline-flex;
+    border: 1px solid #353535;
+    border-radius: 7px;
+    overflow: hidden;
+  }
+#viz-backward .scenario button {
+    border: 0;
+    border-radius: 0;
+    background: #121212;
+  }
+#viz-backward .scenario button + button { border-left: 1px solid #353535; }
+#viz-backward .scenario button[aria-checked="true"] {
+    background: var(--ink);
+    color: #000;
+  }
+#viz-backward .stage {
+    flex: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 24px 40px;
+    padding: 18px 32px 24px;
+    align-items: start;
+  }
+#viz-backward .algebra {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+#viz-backward .equation-fit { width: 100%; }
+#viz-backward .equation {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transform-origin: 0 0;
+  }
+#viz-backward .block {
+    display: flex;
+    flex-direction: column;
+  }
+#viz-backward .block-head {
+    height: 30px;
+    position: relative;
+  }
+#viz-backward .op {
+    font-size: 24px;
+    padding: 0 3px;
+  }
+#viz-backward .bracketed {
+    position: relative;
+    padding: var(--bracket-pad) 10px;
+  }
+#viz-backward .bracketed::before, #viz-backward .bracketed::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    border: 2px solid var(--ink);
+  }
+#viz-backward .bracketed::before { left: 0; border-right: 0; }
+#viz-backward .bracketed::after { right: 0; border-left: 0; }
+#viz-backward .matrix-grid, #viz-backward .tau-head {
+    display: grid;
+    grid-template-columns: var(--columns);
+  }
+#viz-backward .tau-head {
+    align-items: end;
+    padding: 0 10px 2px;
+  }
+#viz-backward .tau-label {
+    position: absolute;
+    right: calc(100% + 4px);
+    bottom: 4px;
+  }
+#viz-backward .cell, #viz-backward .tau-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+  }
+#viz-backward .cell {
+    height: var(--cell-h);
+    padding: 0 6px;
+    opacity: 0.5;
+  }
+#viz-backward .cell.row-t { opacity: 1; }
+#viz-backward .cell.block-start, #viz-backward .tau-cell.block-start {
+    border-left: 1.5px solid #555;
+  }
+#viz-backward .cell.block-top { border-top: 1.5px solid #555; }
+#viz-backward .vector .cell { min-width: 64px; }
+#viz-backward #bwd-g-vector .cell { opacity: 1; }
+#viz-backward .future { color: var(--future); }
+#viz-backward .present { color: var(--present); }
+#viz-backward .muted { color: var(--dim); }
+#viz-backward .row-highlight {
+    position: absolute;
+    left: 5px;
+    right: 5px;
+    height: var(--cell-h);
+    top: calc(var(--bracket-pad) + 2 * var(--cell-h));
+    border: 1.5px solid var(--ink);
+    border-radius: 6px;
+    pointer-events: none;
+  }
+#viz-backward .row-product .katex,
+#viz-backward .estimator .katex { font-size: 1em; }
+#viz-backward .row-product, #viz-backward .estimator {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+  }
+#viz-backward .estimators {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+#viz-backward .estimator { opacity: 0; }
+#viz-backward .estimator .note {
+    font-size: 14px;
+    color: var(--dim);
+  }
+#viz-backward .caption {
+    margin: 0;
+    min-height: 4.4em;
+    color: #c4c4c4;
+    max-width: 60ch;
+  }
+#viz-backward .plots svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    overflow: visible;
+  }
+#viz-backward .axis-line { stroke: #4a4a4a; stroke-width: 1; }
+#viz-backward .pad-zone { fill: #141414; }
+#viz-backward .split-line {
+    stroke: #6a6a6a;
+    stroke-width: 1;
+    stroke-dasharray: 2 4;
+  }
+#viz-backward .band-part { stroke: none; }
+#viz-backward .band-part.present { fill: var(--present); fill-opacity: 0.22; }
+#viz-backward .band-part.future { fill: var(--future); fill-opacity: 0.16; }
+#viz-backward .band-outline {
+    fill: none;
+    stroke: var(--ink);
+    stroke-opacity: 0.55;
+    stroke-width: 1.2;
+  }
+#viz-backward .wedge.present { fill: var(--present); fill-opacity: 0.18; }
+#viz-backward .wedge.future { fill: var(--future); fill-opacity: 0.14; }
+#viz-backward .t-line {
+    stroke: var(--ink);
+    stroke-opacity: 0.5;
+    stroke-width: 1;
+    stroke-dasharray: 3 4;
+  }
+#viz-backward .label {
+    font-family: var(--serif);
+    font-size: 13px;
+    fill: var(--dim);
+  }
+#viz-backward .label.center { text-anchor: middle; }
+#viz-backward .label.end { text-anchor: end; }
+#viz-backward .label.ink { fill: var(--ink); }
+#viz-backward .channel-name {
+    font-family: var(--serif);
+    font-size: 14px;
+    fill: #cfcfcf;
+  }
+#viz-backward .it { font-family: var(--math); font-style: italic; }
+#viz-backward .panel-name {
+    font-family: var(--math);
+    font-style: italic;
+    font-size: 20px;
+  }
+#viz-backward .stim-curve {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1.4;
+    stroke-linejoin: round;
+  }
+#viz-backward .stim-curve.ignored { stroke: var(--ignored); }
+#viz-backward .recon-curve {
+    fill: none;
+    stroke: var(--recon);
+    stroke-width: 2;
+    stroke-linejoin: round;
+  }
+#viz-backward .recon-curve.without-eog {
+    stroke: #a8a8a8;
+    stroke-width: 1.4;
+    stroke-dasharray: 3 3;
+  }
+#viz-backward .recon-dot { fill: var(--recon); }
+#viz-backward .eeg-trace {
+    fill: none;
+    stroke: var(--eeg-dim);
+    stroke-width: 1.1;
+    stroke-linejoin: round;
+  }
+#viz-backward .eeg-trace.lit { stroke: var(--eeg); stroke-width: 1.6; }
+#viz-backward .curve {
+    fill: none;
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+#viz-backward .curve.weight { stroke: var(--beta); }
+#viz-backward .curve.pattern { stroke: var(--pattern); }
+#viz-backward .curve.truth {
+    stroke: var(--ink);
+    stroke-width: 1.3;
+    stroke-dasharray: 4 4;
+  }
+#viz-backward .row-focus {
+    fill: var(--ink);
+    fill-opacity: 0.05;
+    stroke: var(--ink);
+    stroke-opacity: 0.45;
+    stroke-width: 1.2;
+  }
+#viz-backward .bar { stroke: none; }
+#viz-backward .bar.channel { fill: var(--beta); }
+#viz-backward .bar.sum { fill: var(--recon); }
+#viz-backward .decision line { stroke: #6a6a6a; stroke-width: 1; }
+#viz-backward .decision .bar-attended { fill: var(--ink); }
+#viz-backward .decision .bar-ignored { fill: var(--ignored); }
+#viz-backward .decision .mark {
+    font-family: var(--serif);
+    font-size: 14px;
+    text-anchor: middle;
+  }
+#viz-backward .decision.correct .mark { fill: var(--eeg); }
+#viz-backward .decision.wrong .mark { fill: var(--future); }
+#viz-backward .score-small {
+    font-family: var(--serif);
+    font-size: 16px;
+    text-anchor: middle;
+    fill: var(--recon);
+  }
+#viz-backward .score {
+    font-family: var(--serif);
+    font-size: 26px;
+    text-anchor: middle;
+    fill: var(--ink);
+  }
+#viz-backward .overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+  }
+#viz-backward .overlay path {
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+  }
+#viz-backward .controls {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 32px 14px;
+    border-top: 1px solid #242424;
+    background: #080808;
+    font-size: 15px;
+    color: #cfcfcf;
+  }
+#viz-backward .controls input[type="range"] { flex: 1; }
+#viz-backward button {
+    font: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    background: #1a1a1a;
+    border: 1px solid #353535;
+    border-radius: 6px;
+    padding: 5px 12px;
+    cursor: pointer;
+  }
+#viz-backward button:hover { border-color: #6a6a6a; }
+#viz-backward button.play {
+    min-width: 108px;
+    font-size: 15px;
+    background: var(--ink);
+    color: #000;
+    border-color: var(--ink);
+  }
+#viz-backward input[type="range"] { accent-color: var(--recon); }
+#viz-backward button:focus-visible, #viz-backward input:focus-visible {
+    outline: 2px solid var(--recon);
+    outline-offset: 2px;
+  }
+#viz-backward .chapter-label {
+    min-width: 9em;
+    text-align: right;
+  }
+@media (max-width: 920px) {
+#viz-backward .stage { grid-template-columns: 1fr; padding: 14px 16px; }
+#viz-backward .intro { padding: 16px 16px 0; }
+#viz-backward .controls { padding: 10px 16px 12px; }
+}
 </style>
 </head>
 <body>
@@ -936,6 +1310,77 @@ html, body {
   <path id="erp-link-row"></path>
   <path id="erp-link-output"></path>
   <path id="erp-link-estimator"></path>
+</svg>
+</section>
+
+<hr class="double-rule">
+
+<section class="viz" id="viz-backward" aria-label="Modelo backward">
+<div class="page">
+  <header class="intro" id="bwd-header">
+    <div class="intro-text">
+      <h1>Modelo backward: reconstruir el estímulo a partir del EEG</h1>
+      <p class="lede">
+        El decoder combina todos los canales en una ventana de retardos,
+        <span id="bwd-lede-model"></span>. Se obtiene una reconstrucción del
+        estímulo y unos pesos que no se leen como una respuesta: para eso
+        están los patrones.
+      </p>
+    </div>
+    <div class="settings">
+      <div class="scenario" role="radiogroup" aria-label="Escenario">
+        <button role="radio" data-bwd-scenario="independent">
+          Ruido independiente
+        </button>
+        <button role="radio" data-bwd-scenario="blinks">
+          Con parpadeos
+        </button>
+        <button role="radio" data-bwd-scenario="attention">
+          Atención (dos oídos)
+        </button>
+      </div>
+      <button id="bwd-btn-new-stimulus">Nuevo estímulo</button>
+      <label>Velocidad
+        <input type="range" id="bwd-input-speed" min="0.25" max="3"
+               step="0.25" value="0.5">
+      </label>
+    </div>
+  </header>
+
+  <main class="stage">
+    <section class="algebra" aria-label="Modelo lineal inverso">
+      <div class="equation-fit" id="bwd-equation-fit">
+        <div class="equation" id="bwd-equation"></div>
+      </div>
+      <div class="row-product" id="bwd-row-product"></div>
+      <div class="estimators">
+        <div class="estimator" id="bwd-estimator-ridge"></div>
+        <div class="estimator" id="bwd-estimator-haufe"></div>
+        <div class="estimator" id="bwd-estimator-decision"></div>
+      </div>
+      <p class="caption" id="bwd-caption" aria-live="polite"></p>
+    </section>
+
+    <section class="plots" aria-label="Estímulo, EEG, pesos y patrones">
+      <svg id="bwd-plots" role="img"
+           aria-label="Estímulo, reconstrucción, EEG, pesos y patrones"></svg>
+    </section>
+  </main>
+
+  <footer class="controls" id="bwd-footer">
+    <button id="bwd-btn-prev" aria-label="Etapa anterior">◀</button>
+    <button id="bwd-btn-play" class="play">Reproducir</button>
+    <button id="bwd-btn-next" aria-label="Etapa siguiente">▶</button>
+    <input type="range" id="bwd-scrubber" min="0" max="1" step="any"
+           value="0" aria-label="Posición de la animación">
+    <span class="chapter-label" id="bwd-chapter-label"></span>
+  </footer>
+</div>
+
+<svg class="overlay" id="bwd-overlay" aria-hidden="true">
+  <path id="bwd-link-row"></path>
+  <path id="bwd-link-output"></path>
+  <path id="bwd-link-estimator"></path>
 </svg>
 </section>
 
@@ -3275,6 +3720,1592 @@ function main() {
     newStimulusButton: byId("btn-new-stimulus"),
     inputSpeed: byId("input-speed"),
     scenarioButtons: Array.from(document.querySelectorAll("[data-scenario]")),
+  });
+  bindControls();
+  rebuild();
+  document.fonts.ready.then(() => {
+    fitLayout();
+    render();
+  });
+}
+
+window.addEventListener("load", main);
+})();
+</script>
+<script>
+(function () {
+"use strict";
+
+const ROOT = document.getElementById("viz-backward");
+const byId = id => document.getElementById(`bwd-${id}`);
+
+function isActive() {
+  const rect = ROOT.getBoundingClientRect();
+  const middle = window.innerHeight / 2;
+  return rect.top <= middle && rect.bottom >= middle;
+}
+
+
+const N_SAMPLES = 600;
+const TAU_MAX = 24;
+const N_LAGS = TAU_MAX + 1;
+const WARMUP = 40;
+const HIDDEN_TRAIN = 3600;
+const SHOWN_TRAIN = 400;
+const CV_FOLDS = 4;
+const NOISE_AR = 0.7;
+const ALPHAS = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30];
+const DECISION_WINDOW = 20;
+const DECISION_WINDOWS_COMPARED = [20, 40, 100];
+
+const CHANNELS = ["Fp1", "Fz", "Cz", "Pz", "Oz", "EOG"];
+const EOG = CHANNELS.indexOf("EOG");
+const TOPOGRAPHY = [0.45, 0.9, 1.0, 0.55, -0.25, 0.0];
+const BLINK_GAIN = [0.8, 0.45, 0.2, 0.08, 0.0, 1.0];
+
+const SCENARIOS = {
+  independent: {noise: 1.3, eogNoise: 0.3, blinks: false, attention: false},
+  blinks: {
+    noise: 1.3, eogNoise: 0.3, blinks: true, blinkAmp: 12,
+    blinkGap: [30, 70], attention: false,
+  },
+  attention: {
+    noise: 1.1, eogNoise: 0.3, blinks: true, blinkAmp: 12,
+    blinkGap: [30, 70], attention: true, ignoredGain: 0.2,
+  },
+};
+
+const BASE_CHAPTERS = [
+  {id: "sweep", label: "decoder", duration: 9000},
+  {id: "recon", label: "reconstrucción", duration: 3600},
+  {id: "weights", label: "pesos", duration: 3400},
+  {id: "patterns", label: "patrones", duration: 3800},
+];
+const ATTENTION_CHAPTER = {id: "attention", label: "atención", duration: 5200};
+
+const COLOR = {
+  ink: "#f4f4f4",
+  future: "#fc6255",
+  beta: "#f4d345",
+  eeg: "#83c167",
+  recon: "#ff862f",
+  pattern: "#d147bd",
+  ignored: "#58c4dd",
+};
+
+const PLOT = {
+  width: 640,
+  height: 704,
+  left: 78,
+  right: 540,
+  bar: {center: 594, half: 36},
+  stim: {top: 30, bottom: 150},
+  lanes: {
+    single: [{top: 42, bottom: 140}],
+    attention: [{top: 38, bottom: 88}, {top: 100, bottom: 148}],
+  },
+  wedge: {apex: 156, base: 206},
+  decision: {markY: 172, baseY: 202, height: 24},
+  eeg: {top: 208, laneHeight: 33, amp: 12, clip: 1.4, unit: 4},
+  axisY: 440,
+  weights: {titleY: 464, rowTop: 476, rowHeight: 30, amp: 11.5},
+  columns: [{x0: 78, x1: 298}, {x0: 330, x1: 550}],
+  legendY: 698,
+};
+PLOT.eeg.bottom = PLOT.eeg.top + CHANNELS.length * PLOT.eeg.laneHeight;
+PLOT.weights.bottom = PLOT.weights.rowTop
+  + CHANNELS.length * PLOT.weights.rowHeight;
+
+const state = {
+  pos: 0,
+  playing: false,
+  stopAt: null,
+  lastTime: 0,
+  speed: 0.5,
+  scenario: "blinks",
+  seed: 2,
+};
+let model = null;
+let chapters = BASE_CHAPTERS;
+let totalDuration = 0;
+let plot = {};
+let captionKey = null;
+const dom = {};
+
+
+// ============================ model ============================
+
+function mulberry32(seed) {
+  return function random() {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function gaussian(random) {
+  const u = 1 - random();
+  const v = random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function gaussianBump(x, center, width, amplitude) {
+  return amplitude * Math.exp(-(((x - center) / width) ** 2));
+}
+
+function responseKernel(tau) {
+  return (
+    gaussianBump(tau, 4, 1.8, 0.55)
+    + gaussianBump(tau, 9, 2.6, -1.0)
+    + gaussianBump(tau, 17, 3.8, 0.75)
+  );
+}
+
+function mean(values) {
+  return values.reduce((sum, v) => sum + v, 0) / values.length;
+}
+
+function std(values) {
+  const m = mean(values);
+  return Math.sqrt(mean(values.map(v => (v - m) ** 2)));
+}
+
+function zscored(values, from, to) {
+  const part = values.slice(from, to);
+  const m = mean(part);
+  const s = std(part) || 1;
+  return values.map(v => (v - m) / s);
+}
+
+function pearson(a, b) {
+  const ma = mean(a);
+  const mb = mean(b);
+  let sab = 0;
+  let saa = 0;
+  let sbb = 0;
+  for (let i = 0; i < a.length; i++) {
+    sab += (a[i] - ma) * (b[i] - mb);
+    saa += (a[i] - ma) ** 2;
+    sbb += (b[i] - mb) ** 2;
+  }
+  return sab / (Math.sqrt(saa * sbb) || 1);
+}
+
+function smoothed(values, width) {
+  const half = Math.ceil(3 * width);
+  const weights = [];
+  for (let k = -half; k <= half; k++) {
+    weights.push(Math.exp(-0.5 * (k / width) ** 2));
+  }
+  const total = weights.reduce((sum, w) => sum + w, 0);
+  return values.map((_, t) => {
+    let sum = 0;
+    for (let k = -half; k <= half; k++) {
+      const i = Math.min(values.length - 1, Math.max(0, t + k));
+      sum += weights[k + half] * values[i];
+    }
+    return sum / total;
+  });
+}
+
+function speechEnvelope(random, length) {
+  const white = Array.from({length}, () => gaussian(random));
+  return smoothed(smoothed(white, 2).map(Math.abs), 3);
+}
+
+function convolve(signal, kernel) {
+  return signal.map((_, t) => {
+    let sum = 0;
+    kernel.forEach((k, tau) => {
+      if (t - tau >= 0) sum += k * signal[t - tau];
+    });
+    return sum;
+  });
+}
+
+function colouredNoise(random, length) {
+  const noise = new Array(length).fill(0);
+  for (let t = 1; t < length; t++) {
+    noise[t] = NOISE_AR * noise[t - 1] + gaussian(random);
+  }
+  const scale = std(noise);
+  return noise.map(v => v / scale);
+}
+
+function blinkTrain(random, length, [minGap, maxGap]) {
+  const train = new Array(length).fill(0);
+  const onsets = [];
+  let onset = 10 + Math.floor(random() * 30);
+  while (onset < length) {
+    onsets.push(onset);
+    const width = 5 + 3 * random();
+    const from = Math.max(0, onset - 12);
+    const to = Math.min(length, onset + 12);
+    for (let t = from; t < to; t++) {
+      train[t] += gaussianBump(t, onset, width, 1);
+    }
+    onset += minGap + Math.floor(random() * (maxGap - minGap));
+  }
+  return {train, onsets};
+}
+
+function solveSymmetric(matrix, rhs) {
+  const n = rhs.length;
+  const lower = matrix.map(row => Float64Array.from(row));
+  for (let j = 0; j < n; j++) {
+    let diagonal = lower[j][j];
+    for (let k = 0; k < j; k++) diagonal -= lower[j][k] ** 2;
+    lower[j][j] = Math.sqrt(Math.max(diagonal, 1e-12));
+    for (let i = j + 1; i < n; i++) {
+      let value = lower[i][j];
+      for (let k = 0; k < j; k++) value -= lower[i][k] * lower[j][k];
+      lower[i][j] = value / lower[j][j];
+    }
+  }
+  const forward = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    let value = rhs[i];
+    for (let k = 0; k < i; k++) value -= lower[i][k] * forward[k];
+    forward[i] = value / lower[i][i];
+  }
+  const solution = new Float64Array(n);
+  for (let i = n - 1; i >= 0; i--) {
+    let value = forward[i];
+    for (let k = i + 1; k < n; k++) value -= lower[k][i] * solution[k];
+    solution[i] = value / lower[i][i];
+  }
+  return Array.from(solution);
+}
+
+function designRow(eeg, t) {
+  const row = new Float64Array(CHANNELS.length * N_LAGS);
+  eeg.forEach((channel, c) => {
+    for (let tau = 0; tau <= TAU_MAX; tau++) {
+      row[c * N_LAGS + tau] = channel[t + tau];
+    }
+  });
+  return row;
+}
+
+function normalEquations(rows, target, from, to) {
+  const p = rows[0].length;
+  const gram = Array.from({length: p}, () => new Float64Array(p));
+  const cross = new Float64Array(p);
+  for (let t = from; t < to; t++) {
+    const row = rows[t];
+    for (let i = 0; i < p; i++) {
+      cross[i] += row[i] * target[t];
+      const gramRow = gram[i];
+      const value = row[i];
+      for (let j = i; j < p; j++) gramRow[j] += value * row[j];
+    }
+  }
+  const n = to - from;
+  for (let i = 0; i < p; i++) {
+    cross[i] /= n;
+    for (let j = i; j < p; j++) {
+      gram[i][j] /= n;
+      gram[j][i] = gram[i][j];
+    }
+  }
+  return {gram, cross};
+}
+
+function averageEquations(parts) {
+  const p = parts[0].cross.length;
+  const gram = Array.from({length: p}, () => new Float64Array(p));
+  const cross = new Float64Array(p);
+  for (const part of parts) {
+    for (let i = 0; i < p; i++) {
+      cross[i] += part.cross[i] / parts.length;
+      for (let j = 0; j < p; j++) gram[i][j] += part.gram[i][j] / parts.length;
+    }
+  }
+  return {gram, cross};
+}
+
+function ridge({gram, cross}, alpha) {
+  const regularized = gram.map((row, i) => {
+    const copy = Float64Array.from(row);
+    copy[i] += alpha;
+    return copy;
+  });
+  return solveSymmetric(regularized, cross);
+}
+
+function predict(rows, decoder) {
+  return rows.map(row => row.reduce((sum, v, i) => sum + v * decoder[i], 0));
+}
+
+function selectAlpha(rows, target, folds, foldLength) {
+  const scores = ALPHAS.map(() => 0);
+  folds.forEach((_, k) => {
+    const fitted = averageEquations(folds.filter((__, j) => j !== k));
+    const from = k * foldLength;
+    const heldRows = rows.slice(from, from + foldLength);
+    const heldTarget = target.slice(from, from + foldLength);
+    ALPHAS.forEach((alpha, a) => {
+      scores[a] += pearson(predict(heldRows, ridge(fitted, alpha)), heldTarget);
+    });
+  });
+  return ALPHAS[scores.indexOf(Math.max(...scores))];
+}
+
+function byChannel(flat) {
+  return CHANNELS.map((_, c) => flat.slice(c * N_LAGS, (c + 1) * N_LAGS));
+}
+
+function decide(reconstruction, attended, ignored, width) {
+  const windows = [];
+  for (let start = SHOWN_TRAIN; start + width <= N_SAMPLES; start += width) {
+    const recon = reconstruction.slice(start, start + width);
+    const rAttended = pearson(recon, attended.slice(start, start + width));
+    const rIgnored = pearson(recon, ignored.slice(start, start + width));
+    windows.push({
+      start, rAttended, rIgnored, correct: rAttended > rIgnored,
+    });
+  }
+  return windows;
+}
+
+function buildModel(scenarioId, seed) {
+  const scenario = SCENARIOS[scenarioId];
+  const random = mulberry32(seed);
+  const length = WARMUP + HIDDEN_TRAIN + N_SAMPLES + TAU_MAX;
+  const kernel = Array.from({length: N_LAGS}, (_, tau) => responseKernel(tau));
+
+  const attendedRaw = speechEnvelope(random, length);
+  const ignoredRaw = scenario.attention ? speechEnvelope(random, length) : null;
+  const attendedResponse = convolve(attendedRaw, kernel);
+  const ignoredResponse = ignoredRaw ? convolve(ignoredRaw, kernel) : null;
+  const responseScale = std(attendedResponse.slice(WARMUP));
+  const blinks = scenario.blinks
+    ? blinkTrain(random, length, scenario.blinkGap) : null;
+
+  const clean = CHANNELS.map((_, c) => attendedResponse.map((value, t) => (
+    TOPOGRAPHY[c] * (
+      value + (ignoredResponse ? scenario.ignoredGain * ignoredResponse[t] : 0)
+    )
+  )));
+  const measured = clean.map((channel, c) => {
+    const noise = colouredNoise(random, length);
+    const noiseScale = scenario.noise * responseScale
+      * (c === EOG ? scenario.eogNoise : 1);
+    const blinkScale = blinks
+      ? scenario.blinkAmp * responseScale * BLINK_GAIN[c] : 0;
+    const blink = t => (blinks ? blinkScale * blinks.train[t] : 0);
+    return channel.map(
+      (value, t) => value + noiseScale * noise[t] + blink(t)
+    );
+  });
+
+  // Samples [0, HIDDEN_TRAIN) train the decoder off screen; the plots show
+  // the next N_SAMPLES, whose first SHOWN_TRAIN are training too.
+  const crop = values => values.slice(WARMUP);
+  const trainEnd = HIDDEN_TRAIN + SHOWN_TRAIN;
+  const shownEnd = HIDDEN_TRAIN + N_SAMPLES;
+  const attended = zscored(crop(attendedRaw), 0, trainEnd);
+  const ignored = ignoredRaw ? zscored(crop(ignoredRaw), 0, trainEnd) : null;
+  const channelScales = measured.map(
+    channel => std(crop(channel).slice(0, trainEnd))
+  );
+  const eeg = measured.map(channel => zscored(crop(channel), 0, trainEnd));
+  const rows = Array.from({length: shownEnd}, (_, t) => designRow(eeg, t));
+
+  const foldLength = Math.floor(trainEnd / CV_FOLDS);
+  const folds = Array.from({length: CV_FOLDS}, (_, k) => normalEquations(
+    rows, attended, k * foldLength, (k + 1) * foldLength
+  ));
+  const alpha = selectAlpha(rows, attended, folds, foldLength);
+  const train = averageEquations(folds);
+  const decoder = ridge(train, alpha);
+  const reconstruction = predict(rows, decoder);
+  const withoutEog = predict(rows, decoder.map(
+    (g, i) => (Math.floor(i / N_LAGS) === EOG ? 0 : g)
+  ));
+
+  const fitted = reconstruction.slice(0, CV_FOLDS * foldLength);
+  const reconMean = mean(fitted);
+  const reconStd = std(fitted);
+  const pattern = train.gram.map(
+    row => row.reduce((sum, v, j) => sum + v * decoder[j], 0) / reconStd ** 2
+  );
+  const cleanCropped = clean.map(crop);
+  const truth = CHANNELS.flatMap((_, c) => Array.from(
+    {length: N_LAGS},
+    (__, tau) => {
+      let sum = 0;
+      for (let t = 0; t < fitted.length; t++) {
+        sum += (cleanCropped[c][t + tau] / channelScales[c]) * attended[t];
+      }
+      return sum / fitted.length;
+    }
+  ));
+
+  const shown = values => values.slice(HIDDEN_TRAIN, shownEnd);
+  const shownRecon = shown(reconstruction);
+  const shownWithoutEog = shown(withoutEog);
+  const shownAttended = shown(attended);
+  const shownIgnored = ignored ? shown(ignored) : null;
+  const test = values => values.slice(SHOWN_TRAIN);
+  const decisions = scenario.attention
+    ? Object.fromEntries(DECISION_WINDOWS_COMPARED.map(width => [
+      width, decide(shownRecon, shownAttended, shownIgnored, width),
+    ]))
+    : null;
+
+  return {
+    scenarioId,
+    scenario,
+    alpha,
+    nTrain: trainEnd,
+    attended: shownAttended,
+    ignored: shownIgnored,
+    eeg: eeg.map(channel => channel.slice(
+      HIDDEN_TRAIN, shownEnd + TAU_MAX
+    )),
+    reconstruction: shownRecon,
+    reconDisplay: shownRecon.map(v => (v - reconMean) / reconStd),
+    withoutEogDisplay: shownWithoutEog.map(v => (v - reconMean) / reconStd),
+    decoder: byChannel(decoder),
+    pattern: byChannel(pattern),
+    truth: byChannel(truth),
+    score: pearson(test(shownRecon), test(shownAttended)),
+    scoreIgnored: shownIgnored
+      ? pearson(test(shownRecon), test(shownIgnored)) : null,
+    scoreWithoutEog: pearson(test(shownWithoutEog), test(shownAttended)),
+    weightSimilarity: pearson(decoder, truth),
+    patternSimilarity: pearson(pattern, truth),
+    blinkOnsets: blinks
+      ? blinks.onsets
+        .map(onset => onset - WARMUP - HIDDEN_TRAIN)
+        .filter(onset => onset > -12 && onset < N_SAMPLES + TAU_MAX + 12)
+      : [],
+    decisions,
+  };
+}
+
+function contributions(t) {
+  return model.decoder.map((weights, c) => weights.reduce(
+    (sum, g, tau) => sum + g * model.eeg[c][t + tau], 0
+  ));
+}
+
+function blinkInWindow(t) {
+  return model.blinkOnsets.some(
+    onset => onset >= t - 4 && onset <= t + TAU_MAX + 4
+  );
+}
+
+function quantile(values, q) {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))];
+}
+
+
+// ======================== timeline & easing ====================
+
+function locate(pos) {
+  let start = 0;
+  for (let index = 0; index < chapters.length; index++) {
+    const chapter = chapters[index];
+    const isLast = index === chapters.length - 1;
+    if (pos < start + chapter.duration || isLast) {
+      const p = clamp01((pos - start) / chapter.duration);
+      return {index, id: chapter.id, p, start, end: start + chapter.duration};
+    }
+    start += chapter.duration;
+  }
+  return null;
+}
+
+function chapterAtLeast(frame, id) {
+  const index = chapters.findIndex(c => c.id === id);
+  return index >= 0 && frame.index >= index;
+}
+
+function arrival(frame, id, start = 0, end = 0.3) {
+  if (!chapterAtLeast(frame, id)) return 0;
+  return frame.id === id ? phase(frame.p, start, end) : 1;
+}
+
+function sweepTime(frame) {
+  if (frame.id !== "sweep") return N_SAMPLES - 1;
+  return phase(frame.p, 0.02, 0.98) * (N_SAMPLES - 1);
+}
+
+function smooth(x) {
+  const inflection = 10;
+  const sigmoid = z => 1 / (1 + Math.exp(-z));
+  const error = sigmoid(-inflection / 2);
+  const value = (sigmoid(inflection * (x - 0.5)) - error)
+    / (1 - 2 * error);
+  return clamp01(value);
+}
+
+function linearPhase(p, start, end) {
+  return clamp01((p - start) / (end - start));
+}
+
+function phase(p, start, end) {
+  return smooth(linearPhase(p, start, end));
+}
+
+function clamp01(x) {
+  return Math.min(1, Math.max(0, x));
+}
+
+function formatR(value) {
+  return value.toFixed(2).replace("-", "\u2212");
+}
+
+
+// ============================ TeX ==============================
+
+function tex(source, display = false) {
+  if (!window.katex) return `<span class="muted">${source}</span>`;
+  return window.katex.renderToString(source, {
+    throwOnError: false,
+    displayMode: display,
+    strict: "ignore",
+  });
+}
+
+function colored(color, source) {
+  return `\\textcolor{${color}}{${source}}`;
+}
+
+function gTex(channel, lag) {
+  return colored(COLOR.beta, `g^{(${channel})}_{${lag}}`);
+}
+
+function eegIndexTex(rowKey, lagKey) {
+  if (lagKey === "0") return rowKey;
+  if (rowKey === "0") return lagKey;
+  return `${rowKey}+${lagKey}`;
+}
+
+
+// ======================== algebra (DOM) ========================
+
+const ROW_KEYS = ["0", "vdots", "t", "vdots", "N-1"];
+const LAG_COLUMNS = [
+  {lag: "0", cls: "present"},
+  {dots: true},
+  {lag: "\\tau_M", cls: "future"},
+];
+
+function cellHtml(className, content) {
+  return `<div class="cell ${className}">${content}</div>`;
+}
+
+function columnSpecs() {
+  const block = (channel, first) => LAG_COLUMNS.map((spec, j) => ({
+    ...spec, channel, blockStart: !first && j === 0,
+  }));
+  return [
+    ...block("1", true),
+    {dots: true, gap: true, blockStart: true},
+    ...block("C", false),
+  ];
+}
+
+function buildEquation() {
+  const columns = columnSpecs();
+  const template = columns
+    .map(spec => (spec.dots ? "34px" : "auto"))
+    .join(" ");
+
+  const sCells = ROW_KEYS.map(rowKey => {
+    if (rowKey === "vdots") return cellHtml("", tex("\\vdots"));
+    const content = colored(COLOR.recon, `\\hat{s}_{${rowKey}}`);
+    return cellHtml(rowKey === "t" ? "row-t" : "", tex(content));
+  }).join("");
+
+  const headCells = columns.map(spec => {
+    const content = spec.dots ? "" : tex(spec.lag);
+    const classes = [
+      "tau-cell", spec.cls ?? "", spec.blockStart ? "block-start" : "",
+    ];
+    return `<div class="${classes.join(" ")}">${content}</div>`;
+  }).join("");
+
+  const matrixCells = ROW_KEYS.flatMap(rowKey => columns.map(spec => {
+    const classes = [
+      rowKey === "t" ? `row-t ${spec.cls ?? ""}` : "",
+      spec.blockStart ? "block-start" : "",
+    ].join(" ");
+    if (rowKey === "vdots") {
+      return cellHtml(classes, spec.dots ? "" : tex("\\vdots"));
+    }
+    if (spec.dots) return cellHtml(classes, tex("\\cdots"));
+    const index = eegIndexTex(rowKey, spec.lag);
+    return cellHtml(classes, tex(`y^{(${spec.channel})}_{${index}}`));
+  })).join("");
+
+  const gBlock = (channel, first) => ["0", "vdots", "\\tau_M"].map(
+    (lag, j) => {
+      const classes = !first && j === 0 ? "block-top" : "";
+      if (lag === "vdots") return cellHtml(classes, tex("\\vdots"));
+      return cellHtml(classes, tex(gTex(channel, lag)));
+    }
+  );
+  const gCells = [
+    ...gBlock("1", true),
+    cellHtml("block-top", tex("\\vdots")),
+    ...gBlock("C", false),
+  ].join("");
+
+  dom.equation.style.setProperty("--columns", template);
+  dom.equation.innerHTML = (
+    '<div class="block"><div class="block-head"></div>'
+    + `<div class="bracketed vector" id="bwd-s-vector">${sCells}`
+    + '<div class="row-highlight"></div></div></div>'
+    + '<div class="block"><div class="block-head"></div>'
+    + '<span class="op">=</span></div>'
+    + '<div class="block"><div class="block-head tau-head">'
+    + `<span class="tau-label">${tex("\\tau")}</span>${headCells}</div>`
+    + `<div class="bracketed matrix-grid">${matrixCells}`
+    + '<div class="row-highlight" id="bwd-row-highlight"></div></div></div>'
+    + '<div class="block"><div class="block-head"></div>'
+    + `<div class="bracketed vector" id="bwd-g-vector">${gCells}`
+    + "</div></div>"
+  );
+  dom.rowHighlight = byId("row-highlight");
+  dom.gVector = byId("g-vector");
+}
+
+function buildRowProduct() {
+  const sum = (
+    "\\displaystyle\\sum_{c=1}^{C}\\sum_{\\tau=0}^{\\tau_M}"
+    + `${gTex("c", "\\tau")}\\, ${colored(COLOR.eeg, "y^{(c)}_{t+\\tau}")}`
+  );
+  dom.rowProduct.innerHTML = [
+    tex(colored(COLOR.recon, "\\hat{s}_t")),
+    tex("="),
+    `<span id="bwd-product-sum">${tex(sum)}</span>`,
+  ].map(html => `<span>${html}</span>`).join("");
+  dom.productSum = byId("product-sum");
+}
+
+function buildEstimators() {
+  const gHat = colored(COLOR.beta, "\\hat{g}");
+  dom.estimatorRidge.innerHTML = (
+    tex(`${gHat} = (R^\\top R + \\lambda I)^{-1} R^\\top s`)
+    + `<span class="note">${tex("\\quad")}</span>`
+    + tex(`r = \\operatorname{corr}(s,\\, ${colored(COLOR.recon, "\\hat{s}")})`)
+  );
+  dom.estimatorHaufe.innerHTML = (
+    tex(
+      `${colored(COLOR.pattern, "A")} = \\dfrac{\\Sigma_R\\, ${gHat}}`
+      + `{\\sigma^2_{${colored(COLOR.recon, "\\hat{s}")}}}`
+    )
+    + '<span class="note">Haufe et al. (2014)</span>'
+  );
+  dom.estimatorDecision.innerHTML = tex(
+    "\\text{atendido} = \\arg\\max_{k\\,\\in\\,\\{A,\\,I\\}}"
+    + `\\operatorname{corr}(S_k,\\, ${colored(COLOR.recon, "\\hat{s}")})`
+  );
+}
+
+function fitLayout() {
+  const chrome = dom.header.offsetHeight + dom.footer.offsetHeight;
+  const singleColumn = window.matchMedia("(max-width: 920px)").matches;
+  const stageHeight = singleColumn
+    ? Infinity : Math.max(320, window.innerHeight - chrome - 44);
+  dom.plots.style.maxHeight = singleColumn ? "" : `${stageHeight}px`;
+
+  dom.equation.style.transform = "none";
+  const naturalWidth = dom.equation.offsetWidth;
+  const naturalHeight = dom.equation.offsetHeight;
+  const available = dom.equationFit.clientWidth;
+  const scale = Math.min(
+    1.15, available / naturalWidth, (stageHeight * 0.42) / naturalHeight
+  );
+  dom.equation.style.transform = `scale(${scale})`;
+  dom.equationFit.style.height = `${naturalHeight * scale}px`;
+}
+
+
+// ========================= plots (SVG) =========================
+
+function svgEl(tag, attributes = {}, parent = null) {
+  const element = document.createElementNS(
+    "http://www.w3.org/2000/svg", tag
+  );
+  for (const [name, value] of Object.entries(attributes)) {
+    element.setAttribute(name, value);
+  }
+  if (parent) parent.append(element);
+  return element;
+}
+
+function svgText(content, attributes, parent) {
+  const element = svgEl("text", attributes, parent);
+  element.innerHTML = content;
+  return element;
+}
+
+function lagLabel(subscript) {
+  return (
+    `<tspan class="it">τ</tspan>`
+    + `<tspan dy="4" font-size="10">${subscript}</tspan>`
+  );
+}
+
+function subscripted(base, subscript) {
+  return `${base}<tspan dy="5" font-size="13">${subscript}</tspan>`;
+}
+
+function linePath(values, x, y) {
+  return values.map((value, i) => {
+    const command = i === 0 ? "M" : "L";
+    return `${command}${x(i).toFixed(1)},${y(value).toFixed(1)}`;
+  }).join(" ");
+}
+
+function buildScales() {
+  const iMin = 0;
+  const iMax = N_SAMPLES - 1 + TAU_MAX;
+  const step = (PLOT.right - PLOT.left) / (iMax - iMin + 1);
+  const xTime = i => PLOT.left + (i - iMin + 0.5) * step;
+
+  const laneSet = model.scenario.attention
+    ? PLOT.lanes.attention : PLOT.lanes.single;
+  const laneScale = (lane, values) => {
+    const low = Math.min(...values);
+    const high = Math.max(...values);
+    return v => {
+      const clipped = Math.max(low - 0.2, Math.min(high + 0.2, v));
+      return lane.bottom - ((clipped - low) / (high - low)) * (
+        lane.bottom - lane.top
+      );
+    };
+  };
+  const yStim = [laneScale(laneSet[0], model.attended)];
+  if (model.ignored) yStim.push(laneScale(laneSet[1], model.ignored));
+
+  const laneBase = c => PLOT.eeg.top + (c + 0.5) * PLOT.eeg.laneHeight;
+  const yEeg = (c, v) => {
+    const {amp, clip, unit} = PLOT.eeg;
+    const scaled = Math.max(-clip, Math.min(clip, v / unit));
+    return laneBase(c) - scaled * amp;
+  };
+
+  const xLag = PLOT.columns.map(({x0, x1}) => (
+    tau => x0 + 8 + (tau / TAU_MAX) * (x1 - x0 - 16)
+  ));
+  const rowBase = c => PLOT.weights.rowTop + (c + 0.5) * PLOT.weights.rowHeight;
+  const peak = rows => Math.max(...rows.flat().map(Math.abs), 1e-9);
+
+  const allContributions = [];
+  for (let t = 0; t < N_SAMPLES; t++) {
+    allContributions.push(...contributions(t).map(Math.abs));
+  }
+  const barScale = PLOT.bar.half / quantile(
+    [...allContributions, ...model.reconstruction.map(Math.abs)], 0.985
+  );
+
+  return {
+    iMin, iMax, xTime, yStim, laneSet, laneBase, yEeg, xLag, rowBase,
+    weightPeak: peak(model.decoder),
+    patternPeak: peak(model.pattern),
+    truthPeak: peak(model.truth),
+    barScale,
+  };
+}
+
+function buildStimulusPanel(svg) {
+  const {xTime, yStim, laneSet} = plot;
+  const attention = model.scenario.attention;
+  const names = attention
+    ? [
+      {html: subscripted("S", "A"), note: "atendido", color: "var(--ink)"},
+      {html: subscripted("S", "I"), note: "ignorado", color: "var(--ignored)"},
+    ]
+    : [{html: "S(t)", note: "estímulo", color: "var(--ink)"}];
+  const stimuli = attention
+    ? [model.attended, model.ignored] : [model.attended];
+
+  plot.stimCurves = stimuli.map((values, k) => {
+    const lane = laneSet[k];
+    const middle = (lane.top + lane.bottom) / 2;
+    svgText(names[k].html, {
+      x: 8, y: middle + 2, class: "panel-name", fill: names[k].color,
+    }, svg);
+    svgText(names[k].note, {x: 8, y: middle + 20, class: "label"}, svg);
+    return svgEl("path", {
+      d: linePath(values, xTime, yStim[k]),
+      class: `stim-curve ${k === 1 ? "ignored" : ""}`,
+    }, svg);
+  });
+
+  const reveal = svgEl("clipPath", {id: "bwd-recon-reveal"}, svg);
+  plot.reconReveal = svgEl("rect", {
+    x: PLOT.left - 2, y: 0, height: PLOT.stim.bottom + 10, width: 0,
+  }, reveal);
+  const segment = (values, yScale, from, to) => linePath(
+    values.slice(from, to), i => xTime(from + i), yScale
+  );
+  const withoutEogShown = model.scenario.blinks && !attention;
+  plot.withoutEog = withoutEogShown ? svgEl("path", {
+    d: segment(model.withoutEogDisplay, yStim[0], SHOWN_TRAIN, N_SAMPLES),
+    class: "recon-curve without-eog",
+  }, svg) : null;
+  plot.reconTrain = svgEl("path", {
+    d: segment(model.reconDisplay, yStim[0], 0, SHOWN_TRAIN + 1),
+    class: "recon-curve", "clip-path": "url(#bwd-recon-reveal)",
+  }, svg);
+  plot.reconTest = svgEl("path", {
+    d: segment(model.reconDisplay, yStim[0], SHOWN_TRAIN, N_SAMPLES),
+    class: "recon-curve", "clip-path": "url(#bwd-recon-reveal)",
+  }, svg);
+  plot.reconIgnored = attention ? svgEl("path", {
+    d: segment(model.reconDisplay, yStim[1], SHOWN_TRAIN, N_SAMPLES),
+    class: "recon-curve",
+  }, svg) : null;
+  plot.reconDot = svgEl("circle", {r: 3.5, class: "recon-dot"}, svg);
+
+  const x = PLOT.bar.center;
+  const scoreLabel = (lane, value, note) => {
+    const group = svgEl("g", {}, svg);
+    const middle = (lane.top + lane.bottom) / 2;
+    svgText(`r = ${formatR(value)}`, {
+      x, y: middle - 4, class: "score-small",
+    }, group);
+    svgText(note, {x, y: middle + 11, class: "label center"}, group);
+    return group;
+  };
+  const scores = attention
+    ? [model.score, model.scoreIgnored] : [model.score];
+  plot.scoreLabels = scores.map(
+    (value, k) => scoreLabel(laneSet[k], value, "en test")
+  );
+  plot.withoutEogLabel = plot.withoutEog ? svgText(
+    `sin EOG: ${formatR(model.scoreWithoutEog)}`,
+    {
+      x, y: laneSet[0].bottom - 4, class: "label center",
+      style: "fill: #a8a8a8",
+    },
+    svg
+  ) : null;
+}
+
+function buildBand(svg) {
+  const back = svgEl("g", {}, svg);
+  plot.band = {};
+  for (const part of ["present", "future"]) {
+    plot.band[part] = svgEl("rect", {
+      y: PLOT.eeg.top, height: PLOT.eeg.bottom - PLOT.eeg.top,
+      class: `band-part ${part}`,
+    }, back);
+    plot.band[`wedge-${part}`] = svgEl(
+      "polygon", {class: `wedge ${part}`}, back
+    );
+  }
+  plot.band.outline = svgEl("rect", {
+    y: PLOT.eeg.top, height: PLOT.eeg.bottom - PLOT.eeg.top, rx: 5,
+    class: "band-outline",
+  }, back);
+  plot.band.line = svgEl("line", {
+    y1: PLOT.stim.top - 10, y2: PLOT.eeg.bottom, class: "t-line",
+  }, back);
+  plot.band.tLabel = svgText(
+    '<tspan class="it">t</tspan>',
+    {y: PLOT.stim.top - 14, class: "label center ink"},
+    svg
+  );
+  plot.band.endLabel = svgText(
+    `<tspan class="it">t</tspan> + ${lagLabel("M")}`,
+    {y: PLOT.eeg.bottom + 14, class: "label"},
+    svg
+  );
+}
+
+function buildEegPanel(svg) {
+  const {xTime, yEeg, laneBase} = plot;
+  const windowClip = svgEl("clipPath", {id: "bwd-window-clip"}, svg);
+  plot.windowClip = svgEl("rect", {
+    y: PLOT.eeg.top, height: PLOT.eeg.bottom - PLOT.eeg.top, width: 0,
+  }, windowClip);
+  plot.litTraces = [];
+  CHANNELS.forEach((name, c) => {
+    svgText(name, {
+      x: 8, y: laneBase(c) + 5, class: "channel-name",
+    }, svg);
+    const d = linePath(model.eeg[c], xTime, v => yEeg(c, v));
+    svgEl("path", {d, class: "eeg-trace"}, svg);
+    plot.litTraces.push(svgEl("path", {
+      d, class: "eeg-trace lit", "clip-path": "url(#bwd-window-clip)",
+    }, svg));
+  });
+}
+
+function buildAxes(svg) {
+  const {xTime} = plot;
+  const padFrom = xTime(N_SAMPLES - 0.5);
+  const padTo = xTime(plot.iMax + 0.5);
+  svgEl("rect", {
+    x: padFrom, y: PLOT.stim.top, width: padTo - padFrom,
+    height: PLOT.stim.bottom - PLOT.stim.top, class: "pad-zone",
+  }, svg);
+  const split = xTime(SHOWN_TRAIN - 0.5);
+  svgEl("line", {
+    x1: split, x2: split, y1: PLOT.stim.top, y2: PLOT.eeg.bottom,
+    class: "split-line",
+  }, svg);
+  svgText("entrenamiento (fragmento)", {
+    x: xTime(SHOWN_TRAIN / 2), y: PLOT.axisY, class: "label center",
+  }, svg);
+  svgText("test", {
+    x: xTime((SHOWN_TRAIN + N_SAMPLES) / 2), y: PLOT.axisY,
+    class: "label center",
+  }, svg);
+}
+
+function buildBars(svg) {
+  const {center, half} = PLOT.bar;
+  const group = svgEl("g", {}, svg);
+  svgEl("line", {
+    x1: center, x2: center, y1: PLOT.eeg.top, y2: PLOT.eeg.bottom,
+    class: "axis-line",
+  }, group);
+  const sumLane = plot.laneSet[0];
+  const sumY = (sumLane.top + sumLane.bottom) / 2;
+  svgEl("line", {
+    x1: center, x2: center, y1: sumY - 12, y2: sumY + 12, class: "axis-line",
+  }, group);
+  svgText("aporte", {
+    x: center, y: PLOT.eeg.top - 6, class: "label center",
+  }, group);
+  svgText(
+    'suma = <tspan font-style="italic">ŝ</tspan>'
+    + '<tspan dy="4" font-size="10">t</tspan>',
+    {x: center, y: sumY + 26, class: "label center"},
+    group
+  );
+  plot.bars = CHANNELS.map((_, c) => svgEl("rect", {
+    y: plot.laneBase(c) - 5, height: 10, class: "bar channel",
+  }, group));
+  plot.sumBar = svgEl("rect", {
+    y: sumY - 6, height: 12, class: "bar sum",
+  }, group);
+  plot.barGroup = group;
+  plot.barLimit = half;
+}
+
+function buildDecisions(svg) {
+  plot.decisions = [];
+  if (!model.decisions) return;
+  const {xTime} = plot;
+  const {markY, baseY, height} = PLOT.decision;
+  const group = svgEl("g", {}, svg);
+  for (const item of model.decisions[DECISION_WINDOW]) {
+    const x0 = xTime(item.start - 0.5) + 1.5;
+    const x1 = xTime(item.start + DECISION_WINDOW - 0.5) - 1.5;
+    const middle = (x0 + x1) / 2;
+    const cell = svgEl("g", {
+      class: `decision ${item.correct ? "correct" : "wrong"}`,
+    }, group);
+    svgEl("line", {x1: x0, x2: x1, y1: baseY, y2: baseY}, cell);
+    const barHeight = r => Math.max(0.5, height * Math.max(0, r));
+    svgEl("rect", {
+      x: middle - 5, width: 4.5, y: baseY - barHeight(item.rAttended),
+      height: barHeight(item.rAttended), class: "bar-attended",
+    }, cell);
+    svgEl("rect", {
+      x: middle + 0.5, width: 4.5, y: baseY - barHeight(item.rIgnored),
+      height: barHeight(item.rIgnored), class: "bar-ignored",
+    }, cell);
+    svgText(item.correct ? "✓" : "✗", {
+      x: middle, y: markY, class: "mark",
+    }, cell);
+    plot.decisions.push(cell);
+  }
+  const hits = model.decisions[DECISION_WINDOW].filter(d => d.correct).length;
+  const total = model.decisions[DECISION_WINDOW].length;
+  plot.decisionScore = svgEl("g", {}, svg);
+  svgText(`${hits}/${total}`, {
+    x: PLOT.bar.center, y: PLOT.decision.baseY - 6, class: "score",
+  }, plot.decisionScore);
+  svgText("aciertos", {
+    x: PLOT.bar.center, y: PLOT.decision.baseY + 10, class: "label center",
+  }, plot.decisionScore);
+}
+
+function buildWeightColumns(svg) {
+  const {xLag, rowBase} = plot;
+  const {titleY, amp} = PLOT.weights;
+  const scaleTo = (peak, target) => v => v * (target / peak);
+  const columns = [
+    {
+      rows: model.decoder, peak: plot.weightPeak, cls: "weight",
+      title: "g(τ)", color: "var(--beta)", note: "pesos del decoder",
+      similarity: model.weightSimilarity,
+    },
+    {
+      rows: model.pattern, peak: plot.patternPeak, cls: "pattern",
+      title: "A(τ)", color: "var(--pattern)", note: "patrones",
+      similarity: model.patternSimilarity,
+    },
+  ];
+  CHANNELS.forEach((name, c) => {
+    svgText(name, {
+      x: 8, y: rowBase(c) + 5, class: "channel-name",
+    }, svg);
+  });
+  const eogTop = PLOT.weights.rowTop + EOG * PLOT.weights.rowHeight;
+  plot.eogFocus = svgEl("rect", {
+    x: 2, y: eogTop + 1, width: PLOT.columns[1].x1 + 4,
+    height: PLOT.weights.rowHeight - 2, rx: 6, class: "row-focus",
+  }, svg);
+
+  plot.columns = columns.map((column, k) => {
+    const {x0, x1} = PLOT.columns[k];
+    const x = xLag[k];
+    const group = svgEl("g", {}, svg);
+    const title = svgText(column.title, {
+      x: x0, y: titleY, class: "panel-name", fill: column.color,
+    }, group);
+    svgText(column.note, {
+      x: x0 + title.getComputedTextLength() + 8, y: titleY, class: "label",
+    }, group);
+    const similarity = svgText(
+      `similitud con la verdad: ${formatR(column.similarity)}`,
+      {
+        x: (x0 + x1) / 2, y: PLOT.weights.bottom + 15,
+        class: "label center", style: `fill: ${column.color}`,
+      },
+      svg
+    );
+    const curves = [];
+    const truths = [];
+    CHANNELS.forEach((_, c) => {
+      const base = rowBase(c);
+      svgEl("line", {
+        x1: x0, x2: x1, y1: base, y2: base, class: "axis-line",
+      }, group);
+      const y = v => base - (v / column.peak) * amp;
+      const truthScale = scaleTo(plot.truthPeak, column.peak);
+      truths.push(svgEl("path", {
+        d: linePath(model.truth[c].map(truthScale), x, y),
+        class: "curve truth",
+      }, svg));
+      curves.push(svgEl("path", {
+        d: linePath(column.rows[c], x, y), class: `curve ${column.cls}`,
+      }, svg));
+    });
+    const lagY = PLOT.weights.bottom + 15;
+    svgText("0", {x: x(0), y: lagY, class: "label center"}, group);
+    svgText(lagLabel("M"), {
+      x: x(TAU_MAX), y: lagY, class: "label center",
+    }, group);
+    return {group, curves, truths, similarity};
+  });
+
+  const legend = svgEl("g", {}, svg);
+  svgEl("line", {
+    x1: PLOT.left, x2: PLOT.left + 24, y1: PLOT.legendY - 4,
+    y2: PLOT.legendY - 4, class: "curve truth",
+  }, legend);
+  svgText(
+    "respuesta simulada (verdad)",
+    {x: PLOT.left + 32, y: PLOT.legendY, class: "label"},
+    legend
+  );
+  plot.legend = legend;
+}
+
+function buildPlots() {
+  const svg = dom.plots;
+  svg.innerHTML = "";
+  svg.setAttribute("viewBox", `0 0 ${PLOT.width} ${PLOT.height}`);
+  plot = buildScales();
+  buildAxes(svg);
+  buildBand(svg);
+  buildEegPanel(svg);
+  buildStimulusPanel(svg);
+  buildBars(svg);
+  buildDecisions(svg);
+  buildWeightColumns(svg);
+}
+
+
+// ============================ render ===========================
+
+function render() {
+  const frame = locate(state.pos);
+  const t = Math.round(sweepTime(frame));
+  renderAlgebra(frame);
+  renderSweep(frame, t);
+  renderReconstruction(frame);
+  renderWeights(frame);
+  renderAttention(frame);
+  renderConnectors(frame, t);
+  renderCaption(frame, t);
+  renderControls(frame);
+}
+
+function sweepVisibility(frame) {
+  if (frame.id === "sweep") return phase(frame.p, 0, 0.02);
+  if (frame.id === "recon") return 1 - phase(frame.p, 0, 0.12);
+  return 0;
+}
+
+function renderAlgebra(frame) {
+  dom.rowHighlight.style.opacity = frame.id === "sweep" ? 1 : 0.25;
+  dom.estimatorRidge.style.opacity = arrival(frame, "recon", 0, 0.25);
+  dom.estimatorHaufe.style.opacity = arrival(frame, "patterns", 0, 0.25);
+  dom.estimatorDecision.style.opacity = arrival(frame, "attention", 0, 0.2);
+}
+
+function setSpan(element, from, to) {
+  const x1 = plot.xTime(from);
+  const x2 = plot.xTime(to);
+  element.setAttribute("x", Math.min(x1, x2));
+  element.setAttribute("width", Math.max(0, Math.abs(x2 - x1)));
+}
+
+function renderSweep(frame, t) {
+  const {xTime, yStim} = plot;
+  const center = sweepTime(frame);
+  const visible = sweepVisibility(frame);
+
+  const edges = {
+    present: [center - 0.5, center + 0.5],
+    future: [center + 0.5, center + TAU_MAX + 0.5],
+  };
+  const apex = `${xTime(center)},${PLOT.wedge.apex}`;
+  for (const [part, [from, to]] of Object.entries(edges)) {
+    setSpan(plot.band[part], from, to);
+    plot.band[`wedge-${part}`].setAttribute("points", [
+      `${xTime(from)},${PLOT.wedge.base}`,
+      `${xTime(to)},${PLOT.wedge.base}`,
+      apex,
+    ].join(" "));
+  }
+  setSpan(plot.band.outline, edges.present[0], edges.future[1]);
+  setSpan(plot.windowClip, edges.present[0], edges.future[1]);
+  plot.band.line.setAttribute("x1", xTime(center));
+  plot.band.line.setAttribute("x2", xTime(center));
+  plot.band.tLabel.setAttribute("x", xTime(center));
+  plot.band.endLabel.setAttribute("x", xTime(edges.future[1]) + 3);
+  for (const element of Object.values(plot.band)) {
+    element.style.opacity = visible;
+  }
+  plot.litTraces.forEach(trace => { trace.style.opacity = visible; });
+
+  const reveal = frame.id === "sweep" ? xTime(center) - PLOT.left + 2 : 1e4;
+  plot.reconReveal.setAttribute("width", Math.max(0, reveal));
+  plot.reconDot.setAttribute("cx", xTime(t));
+  plot.reconDot.setAttribute("cy", yStim[0](model.reconDisplay[t]));
+  plot.reconDot.style.opacity = visible;
+
+  const {center: barCenter} = PLOT.bar;
+  const toWidth = v => Math.max(
+    -plot.barLimit, Math.min(plot.barLimit, v * plot.barScale)
+  );
+  const parts = contributions(t);
+  parts.forEach((value, c) => {
+    const width = toWidth(value);
+    plot.bars[c].setAttribute("x", barCenter + Math.min(0, width));
+    plot.bars[c].setAttribute("width", Math.abs(width));
+  });
+  const total = toWidth(model.reconstruction[t]);
+  plot.sumBar.setAttribute("x", barCenter + Math.min(0, total));
+  plot.sumBar.setAttribute("width", Math.abs(total));
+  plot.barGroup.style.opacity = visible;
+}
+
+function renderReconstruction(frame) {
+  const inSweep = frame.id === "sweep";
+  const focus = arrival(frame, "recon", 0.1, 0.4);
+  plot.reconTrain.style.opacity = inSweep ? 1 : 1 - 0.7 * focus;
+  plot.reconTest.style.opacity = 1;
+  plot.scoreLabels.forEach(label => {
+    label.style.opacity = arrival(frame, "recon", 0.35, 0.6);
+  });
+  if (plot.reconIgnored) {
+    plot.reconIgnored.style.opacity = 0.85 * arrival(frame, "recon", 0.2, 0.5);
+  }
+}
+
+function drawIn(path, progress) {
+  const length = path.getTotalLength();
+  path.style.strokeDasharray = `${length}`;
+  path.style.strokeDashoffset = `${length * (1 - progress)}`;
+  path.style.opacity = progress > 0 ? 1 : 0;
+}
+
+function renderWeights(frame) {
+  const [weights, patterns] = plot.columns;
+  const truthShown = arrival(frame, "weights", 0.05, 0.3);
+  weights.truths.forEach(path => { path.style.opacity = 0.8 * truthShown; });
+  weights.similarity.style.opacity = arrival(frame, "weights", 0.3, 0.55);
+  plot.legend.style.opacity = truthShown;
+
+  const eogShown = model.scenario.blinks
+    ? arrival(frame, "weights", 0.35, 0.6) : 0;
+  plot.eogFocus.style.opacity = eogShown;
+  const [narrow, wide] = PLOT.columns.map(column => column.x1 + 4 - 2);
+  const widen = arrival(frame, "patterns", 0, 0.2);
+  plot.eogFocus.setAttribute("width", narrow + (wide - narrow) * widen);
+  if (plot.withoutEog) {
+    const shown = frame.id === "weights" ? phase(frame.p, 0.5, 0.7) : 0;
+    plot.withoutEog.style.opacity = shown;
+    plot.withoutEogLabel.style.opacity = shown;
+  }
+
+  const patternProgress = arrival(frame, "patterns", 0.15, 0.7);
+  patterns.group.style.opacity = arrival(frame, "patterns", 0, 0.15);
+  patterns.curves.forEach(path => drawIn(path, patternProgress));
+  patterns.truths.forEach(path => {
+    path.style.opacity = 0.8 * arrival(frame, "patterns", 0.6, 0.8);
+  });
+  patterns.similarity.style.opacity = arrival(frame, "patterns", 0.7, 0.9);
+}
+
+function renderAttention(frame) {
+  if (!plot.decisions.length) return;
+  const count = plot.decisions.length;
+  plot.decisions.forEach((cell, k) => {
+    if (!chapterAtLeast(frame, "attention")) {
+      cell.style.opacity = 0;
+      return;
+    }
+    const start = 0.12 + (0.7 * k) / count;
+    cell.style.opacity = frame.id === "attention"
+      ? phase(frame.p, start, start + 0.08) : 1;
+  });
+  plot.decisionScore.style.opacity = arrival(frame, "attention", 0.85, 0.97);
+}
+
+
+// ========================== connectors =========================
+
+function svgPoint(x, y) {
+  const point = dom.plots.createSVGPoint();
+  point.x = x;
+  point.y = y;
+  return point.matrixTransform(dom.plots.getScreenCTM());
+}
+
+function rightEdge(element) {
+  const rect = element.getBoundingClientRect();
+  return {x: rect.right, y: rect.top + rect.height / 2};
+}
+
+function drawConnector(pathId, from, to, color, progress) {
+  const path = byId(pathId);
+  if (progress <= 0) {
+    path.style.opacity = 0;
+    return;
+  }
+  const origin = byId("overlay").getBoundingClientRect();
+  from = {x: from.x - origin.left, y: from.y - origin.top};
+  to = {x: to.x - origin.left, y: to.y - origin.top};
+  const bend = (to.x - from.x) * 0.5;
+  path.setAttribute("d", (
+    `M ${from.x} ${from.y} C ${from.x + bend} ${from.y}, `
+    + `${to.x - bend} ${to.y}, ${to.x} ${to.y}`
+  ));
+  const length = path.getTotalLength();
+  path.style.stroke = color;
+  path.style.strokeDasharray = `${length}`;
+  path.style.strokeDashoffset = `${length * (1 - progress)}`;
+  path.style.opacity = 0.85;
+}
+
+function renderConnectors(frame, t) {
+  const {xTime, yStim} = plot;
+  const inSweep = frame.id === "sweep";
+  const sweepProgress = inSweep ? phase(frame.p, 0, 0.03) : 0;
+  drawConnector(
+    "link-row",
+    rightEdge(dom.rowHighlight),
+    svgPoint(xTime(sweepTime(frame) + TAU_MAX / 2), PLOT.eeg.top - 2),
+    COLOR.ink,
+    sweepProgress
+  );
+  drawConnector(
+    "link-output",
+    rightEdge(dom.productSum),
+    svgPoint(xTime(t), yStim[0](model.reconDisplay[t])),
+    COLOR.recon,
+    sweepProgress
+  );
+
+  // The other estimators would have to cross the EEG panel to reach their
+  // targets; their colour already ties them to what they produce.
+  const weightsTitle = svgPoint(
+    PLOT.columns[0].x0 - 4, PLOT.weights.titleY - 6
+  );
+  drawConnector(
+    "link-estimator", rightEdge(dom.gVector), weightsTitle, COLOR.beta,
+    frame.id === "weights" ? phase(frame.p, 0, 0.45) : 0
+  );
+}
+
+
+// =========================== caption ===========================
+
+function sweepCaption(t) {
+  const st = tex(colored(COLOR.recon, "\\hat{s}_t"));
+  const shape = `${CHANNELS.length} canales × ${N_LAGS} retardos`;
+  if (model.scenario.blinks && blinkInWindow(t)) {
+    return (
+      "Hay un parpadeo en la ventana: entra fuerte en Fp1, Fz y el EOG."
+      + " Fuera de los parpadeos el EOG casi no aporta; acá sí, porque sus"
+      + " pesos están para restarlos."
+    );
+  }
+  if (t >= SHOWN_TRAIN) {
+    return (
+      `Datos de test, que el decoder no vio: ${st} se sigue armando con`
+      + ` los mismos pesos, ${shape}.`
+    );
+  }
+  return (
+    `${st} combina ${shape} del EEG <i>posterior</i> a <i>t</i>: la`
+    + " respuesta llega después del estímulo, así que la ventana mira hacia"
+    + " adelante. A la derecha, cuánto aporta cada canal."
+  );
+}
+
+function chapterCaption(chapterId) {
+  const blinks = model.scenario.blinks;
+  const attention = model.scenario.attention;
+  const r = formatR(model.score);
+  const nTrain = model.nTrain.toLocaleString("es-AR");
+  const g = tex(colored(COLOR.beta, "\\hat{g}"));
+  if (chapterId === "recon") {
+    if (attention) {
+      return (
+        `${g} se entrena para reconstruir el estímulo atendido. En test, la`
+        + ` reconstrucción se parece más a ${tex("S_A")} (r = ${r}) que a`
+        + ` ${tex("S_I")} (r = ${formatR(model.scoreIgnored)}).`
+      );
+    }
+    return (
+      `${g} se estima por ridge con ${nTrain} muestras de entrenamiento`
+      + ` (acá se ve un fragmento) y ${tex("\\lambda")} elegido por`
+      + ` validación cruzada. En test, la reconstrucción sigue al estímulo`
+      + ` con r = ${r}: un número por estímulo, no uno por canal.`
+    );
+  }
+  if (chapterId === "weights") {
+    const similarity = formatR(model.weightSimilarity);
+    if (blinks) {
+      const withoutEog = attention ? "" : (
+        " Sin esos pesos, la reconstrucción cae a"
+        + ` r = ${formatR(model.scoreWithoutEog)} (gris).`
+      );
+      return (
+        "El EOG no tiene nada del estímulo y aun así recibe pesos tan grandes"
+        + " como los de Cz: el decoder lo usa para restar los parpadeos."
+        + `${withoutEog} Los pesos no dicen dónde está la respuesta`
+        + ` (similitud ${similarity}).`
+      );
+    }
+    return (
+      "Con ruido independiente entre canales no hay nada que restar, y los"
+      + ` pesos se parecen a la respuesta simulada (similitud ${similarity}).`
+      + " Probá «Con parpadeos» para ver cuándo dejan de parecerse."
+    );
+  }
+  if (chapterId === "patterns") {
+    const similarity = formatR(model.patternSimilarity);
+    const what = blinks
+      ? "El EOG queda casi plano y el resto de los canales recupera"
+      : "Recuperan";
+    return (
+      `Los patrones dicen cuánto covaría cada canal con la reconstrucción.`
+      + ` ${what} la respuesta simulada (similitud ${similarity}).`
+      + " Son lo que se interpreta de un modelo backward."
+    );
+  }
+  if (chapterId === "attention") {
+    const [short, middle, long] = DECISION_WINDOWS_COMPARED;
+    const hits = width => model.decisions[width].filter(d => d.correct).length;
+    const rate = width => hits(width) / model.decisions[width].length;
+    const accuracy = width => `${hits(width)}/${model.decisions[width].length}`;
+    const improves = rate(short) <= rate(middle) && rate(middle) <= rate(long);
+    return (
+      `En cada ventana de ${DECISION_WINDOW} muestras se elige el estímulo`
+      + ` que mejor correlaciona con la reconstrucción: acierta`
+      + ` ${accuracy(DECISION_WINDOW)}. Con ventanas de ${middle} acierta`
+      + ` ${accuracy(middle)} y con ventanas de ${long}, ${accuracy(long)}`
+      + (improves
+        ? ": más contexto, decisiones más seguras."
+        : ". Con tan pocas ventanas el número salta, pero en promedio más"
+          + " contexto da decisiones más seguras.")
+    );
+  }
+  return "";
+}
+
+function renderCaption(frame, t) {
+  const key = frame.id === "sweep"
+    ? `sweep:${model.scenario.blinks && blinkInWindow(t)}:${t >= SHOWN_TRAIN}`
+    : `${frame.id}:${model.scenarioId}:${state.seed}`;
+  if (key === captionKey) return;
+  captionKey = key;
+  dom.caption.innerHTML = frame.id === "sweep"
+    ? sweepCaption(t)
+    : chapterCaption(frame.id);
+}
+
+
+// ========================== controls ===========================
+
+function renderControls(frame) {
+  dom.scrubber.max = totalDuration;
+  dom.scrubber.value = state.pos;
+  dom.playButton.textContent = state.playing ? "Pausar" : "Reproducir";
+  dom.chapterLabel.textContent = state.pos >= totalDuration
+    ? "terminado" : chapters[frame.index].label;
+  dom.scenarioButtons.forEach(button => {
+    const checked = button.dataset.bwdScenario === state.scenario;
+    button.setAttribute("aria-checked", String(checked));
+  });
+}
+
+function tick(now) {
+  if (!state.playing) return;
+  const limit = state.stopAt ?? totalDuration;
+  const elapsed = (now - state.lastTime) * state.speed;
+  state.pos = Math.min(limit, state.pos + elapsed);
+  state.lastTime = now;
+  if (state.pos >= limit) {
+    state.playing = false;
+    state.stopAt = null;
+  }
+  render();
+  if (state.playing) requestAnimationFrame(tick);
+}
+
+function play(stopAt = null) {
+  if (state.pos >= totalDuration) state.pos = 0;
+  state.stopAt = stopAt;
+  state.playing = true;
+  state.lastTime = performance.now();
+  requestAnimationFrame(tick);
+  render();
+}
+
+function pause() {
+  state.playing = false;
+  state.stopAt = null;
+  render();
+}
+
+function stepForward() {
+  if (state.pos >= totalDuration) return;
+  const frame = locate(state.pos);
+  play(frame.end);
+}
+
+function stepBackward() {
+  const frame = locate(state.pos);
+  const atStart = state.pos - frame.start < 50;
+  const target = atStart && frame.index > 0
+    ? locate(frame.start - 1).start : frame.start;
+  state.playing = false;
+  state.stopAt = null;
+  state.pos = target;
+  render();
+}
+
+function rebuild() {
+  state.playing = false;
+  state.stopAt = null;
+  state.pos = 0;
+  captionKey = null;
+  model = buildModel(state.scenario, state.seed);
+  chapters = model.scenario.attention
+    ? [...BASE_CHAPTERS, ATTENTION_CHAPTER] : BASE_CHAPTERS;
+  totalDuration = chapters.reduce((sum, c) => sum + c.duration, 0);
+  dom.ledeModel.innerHTML = tex(
+    `${colored(COLOR.recon, "\\hat{s}")} = R\\,${colored(COLOR.beta, "g")}`
+  );
+  buildEquation();
+  buildRowProduct();
+  buildEstimators();
+  buildPlots();
+  fitLayout();
+  render();
+}
+
+function bindControls() {
+  dom.playButton.addEventListener("click", () => {
+    if (state.playing) pause();
+    else play();
+  });
+  dom.nextButton.addEventListener("click", stepForward);
+  dom.prevButton.addEventListener("click", stepBackward);
+  dom.scrubber.addEventListener("input", () => {
+    state.playing = false;
+    state.pos = Number(dom.scrubber.value);
+    render();
+  });
+  dom.scenarioButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      state.scenario = button.dataset.bwdScenario;
+      rebuild();
+    });
+  });
+  dom.newStimulusButton.addEventListener("click", () => {
+    state.seed += 1;
+    rebuild();
+  });
+  dom.inputSpeed.addEventListener("input", () => {
+    state.speed = Number(dom.inputSpeed.value);
+  });
+  document.addEventListener("keydown", event => {
+    if (!isActive()) return;
+    if (event.code === "Space") {
+      event.preventDefault();
+      if (state.playing) pause();
+      else play();
+    } else if (event.code === "ArrowRight") {
+      event.preventDefault();
+      stepForward();
+    } else if (event.code === "ArrowLeft") {
+      event.preventDefault();
+      stepBackward();
+    }
+  });
+  window.addEventListener("resize", () => {
+    fitLayout();
+    render();
+  });
+  window.addEventListener("scroll", render, {passive: true});
+}
+
+function main() {
+  Object.assign(dom, {
+    header: byId("header"),
+    footer: byId("footer"),
+    ledeModel: byId("lede-model"),
+    equation: byId("equation"),
+    equationFit: byId("equation-fit"),
+    rowProduct: byId("row-product"),
+    estimatorRidge: byId("estimator-ridge"),
+    estimatorHaufe: byId("estimator-haufe"),
+    estimatorDecision: byId("estimator-decision"),
+    caption: byId("caption"),
+    plots: byId("plots"),
+    playButton: byId("btn-play"),
+    nextButton: byId("btn-next"),
+    prevButton: byId("btn-prev"),
+    scrubber: byId("scrubber"),
+    chapterLabel: byId("chapter-label"),
+    newStimulusButton: byId("btn-new-stimulus"),
+    inputSpeed: byId("input-speed"),
+    scenarioButtons: Array.from(
+      ROOT.querySelectorAll("[data-bwd-scenario]")
+    ),
   });
   bindControls();
   rebuild();
